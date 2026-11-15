@@ -1,4 +1,4 @@
-// Admin → Usuarios: aprobar cuentas nuevas (enlazándolas a su nombre del horario),
+// Admin → Usuarios: enlazar cuentas que no se encontraron en el horario,
 // activar/desactivar, nombrar administradores y restablecer PIN.
 import { useCallback, useEffect, useState } from 'react'
 import { supabase, mensajeError } from '../../lib/supabase'
@@ -39,8 +39,8 @@ export default function Usuarios() {
       <h1 className="flex items-center gap-2 text-xl font-bold text-slate-900"><Icono n="usuarios" size={26} className="text-marca-texto" />Usuarios</h1>
 
       <section className="space-y-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Por aprobar ({pendientes.length})</h2>
-        {pendientes.length === 0 ? <Vacio>No hay cuentas esperando.</Vacio> : (
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Sin enlazar ({pendientes.length})</h2>
+        {pendientes.length === 0 ? <Vacio>Todas las cuentas están enlazadas a su nombre del horario.</Vacio> : (
           <div className="escalonado space-y-3">
             {pendientes.map((u) => <TarjetaPendiente key={u.id} u={u} libres={libres} avisar={avisar} alListo={cargar} />)}
           </div>
@@ -102,7 +102,7 @@ function TarjetaPendiente({ u, libres, avisar, alListo }) {
     const { error } = await supabase.rpc('aprobar_usuario', { p_perfil: u.id, p_persona: persona })
     setEnviando(false)
     if (error) return avisar(mensajeError(error), 'error')
-    avisar(`${u.nombre.split(' ')[0]} aprobado ✅`)
+    avisar(`${u.nombre.split(' ')[0]} enlazado ✅`)
     alListo()
   }
   const rechazar = async () => {
@@ -127,7 +127,7 @@ function TarjetaPendiente({ u, libres, avisar, alListo }) {
         actual={u.sugerida_id ? { id: u.sugerida_id, nombre: u.sugerida } : null} />
       <div className="flex gap-2">
         <button className="btn-primario flex-1" disabled={enviando || !persona} onClick={aprobar}>
-          <Icono n="check" size={18} className="mr-1 -mt-0.5 align-middle" />Aprobar
+          <Icono n="check" size={18} className="mr-1 -mt-0.5 align-middle" />Enlazar
         </button>
         <button className="btn-peligro" disabled={enviando} onClick={rechazar}>Rechazar</button>
       </div>

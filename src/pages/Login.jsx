@@ -38,7 +38,7 @@ export default function Login() {
           if (/already|registered|exists/i.test(error.message)) throw new Error('Ese usuario ya existe. Elige otro.')
           throw error
         }
-        if (!data.session) throw new Error('La cuenta se creó, pero falta desactivar "Confirm email" en Supabase. Avisa a la administración.')
+        if (!data.session) throw new Error('La cuenta se creó, pero no se pudo iniciar sesión. Intenta entrar con tu usuario y PIN.')
       } else {
         await entrarConClave(u, pin)
       }
@@ -102,7 +102,7 @@ export default function Login() {
           </button>
           <p className="text-center text-xs text-slate-500">
             {modo === 'crear'
-              ? 'La administración aprobará tu cuenta antes de que puedas usarla.'
+              ? 'Si tu nombre coincide con el horario, entras de una vez.'
               : '¿Olvidaste tu PIN? Pide a la administración que lo restablezca.'}
           </p>
         </form>
