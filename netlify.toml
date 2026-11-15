@@ -1,0 +1,28 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Valores públicos por diseño (la seguridad real está en la RLS y funciones de Supabase).
+# La llave secreta de Supabase NUNCA va aquí.
+[build.environment]
+  NODE_VERSION = "22"
+  VITE_SUPABASE_URL = "https://tocahnikeidppzkyotic.supabase.co"
+  VITE_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_cP6yYqE0PQ_7Pw1qc4bF3Q_GZNtwsWC"
+  VITE_EMAIL_DOMAIN = "chambea.internal"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://tocahnikeidppzkyotic.supabase.co wss://tocahnikeidppzkyotic.supabase.co; worker-src 'self' blob:; font-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/version.json"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
