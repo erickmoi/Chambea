@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase, mensajeError } from '../lib/supabase'
 import { useAuth, esAdmin } from '../lib/auth'
-import { rpc } from '../lib/datos'
+import { rpc, telValido, limpiarTel, telBonito } from '../lib/datos'
+import { pushSoportado, necesitaInstalar, estadoPush, activarPush, desactivarPush, probarPush } from '../lib/push'
 import { aplicarModo, modoGuardado } from '../lib/tema'
 import { plataforma, estaInstalada, puedeInstalarDirecto, instalarDirecto, alCambiarInstalable } from '../lib/instalar'
 import { VERSION } from '../lib/version'
@@ -14,7 +15,7 @@ import { Segmentado } from '../components/turnos'
 const ROLES = { superadmin: 'Superadministrador', admin: 'Administración', usuario: 'Compañero' }
 
 export default function MiCuenta({ onNovedades }) {
-  const { cuenta, salir } = useAuth()
+  const { cuenta, salir, recargarCuenta } = useAuth()
   const [pin, setPin] = useState('')
   const [pin2, setPin2] = useState('')
   const [guardando, setGuardando] = useState(false)
@@ -61,6 +62,8 @@ export default function MiCuenta({ onNovedades }) {
         ]} />
       </section>
 
+      <Notificaciones avisar={(texto, tipo = 'ok') => setAviso({ texto, tipo })} />
+      <WhatsApp cuenta={cuenta} recargar={recargarCuenta} avisar={(texto, tipo = 'ok') => setAviso({ texto, tipo })} />
       <Instalar />
 
       <form onSubmit={cambiarPin} className="tarjeta space-y-3">
@@ -77,6 +80,67 @@ export default function MiCuenta({ onNovedades }) {
         <Icono n="novedades" size={16} />Chambea v{VERSION} · Novedades
       </button>
     </div>
+  )
+}
+
+function WhatsApp({ cuenta, recargar, avisar }) {
+  const [tel, setTel] = useState(cuenta.telefono || '')
+  const [guardando, setGuardando] = useState(false)
+  const cambio = limpiarTel(tel) !== cuenta.telefono
+  const guardar = async () => {
+    if (!telValido(tel)) return avisar('Escribe un número de 8 dígitos que empiece con 6 o 7.', 'error')
+    setGuardando(true)
+    try { await rpc('guardar_telefono', { p_telefono: limpiarTel(tel) }); await recargar(); avisar('WhatsApp actualizado ✅') }
+    catch (e) { avisar(e.message, 'error') } finally { setGuardando(false) }
+  }
+  return (
+    <section className="tarjeta space-y-3">
+      <h2 className="flex items-center gap-2 font-bold text-slate-900"><Icono n="whatsapp" size={20} />Mi WhatsApp</h2>
+      <div className="flex items-center gap-2">
+        <span className="rounded-xl bg-slate-100 px-3 py-2.5 text-slate-600">+503</span>
+        <input className="input mono" inputMode="tel" maxLength={9} placeholder={telBonito(cuenta.telefono) || '7000-0000'}
+          value={tel} onChange={(e) => setTel(e.target.value.replace(/[^\d-]/g, ''))} />
+      </div>
+      {cambio && <button className="btn-primario w-full" disabled={guardando} onClick={guardar}>{guardando ? 'Guardando…' : 'Guardar número'}</button>}
+      <p className="text-xs text-slate-500">Lo ven solo tus compañeros con cuenta, para escribirte sobre un cambio.</p>
+    </section>
+  )
+}
+
+function Notificaciones({ avisar }) {
+  const [estado, setEstado] = useState('cargando')
+  const [ocupado, setOcupado] = useState(false)
+  useEffect(() => { estadoPush().then(setEstado) }, [])
+  if (!pushSoportado()) return null
+  const activar = async () => {
+    setOcupado(true)
+    try { await activarPush(); setEstado('activo'); await probarPush().catch(() => {}); avisar('Avisos activados 🔔') }
+    catch (e) { avisar(e.message, 'error') } finally { setOcupado(false) }
+  }
+  const apagar = async () => {
+    setOcupado(true)
+    try { await desactivarPush(); setEstado('inactivo'); avisar('Avisos desactivados en este dispositivo') }
+    finally { setOcupado(false) }
+  }
+  return (
+    <section className="tarjeta space-y-2">
+      <h2 className="flex items-center gap-2 font-bold text-slate-900"><Icono n="notificaciones" size={20} />Avisos en el celular</h2>
+      {necesitaInstalar() ? (
+        <p className="text-sm text-slate-600">En iPhone, primero instala la app (abajo) y ábrela desde la pantalla de inicio.</p>
+      ) : estado === 'bloqueado' ? (
+        <p className="text-sm text-slate-600">Los bloqueaste en este navegador. Actívalos desde los ajustes del navegador para este sitio.</p>
+      ) : estado === 'activo' ? (
+        <div className="flex gap-2">
+          <button className="btn-secundario flex-1" disabled={ocupado} onClick={() => probarPush().then(() => avisar('Prueba enviada'), (e) => avisar(e.message, 'error'))}>Probar</button>
+          <button className="btn-peligro flex-1" disabled={ocupado} onClick={apagar}>Desactivar</button>
+        </div>
+      ) : (
+        <>
+          <p className="text-sm text-slate-600">Te avisamos al instante cuando te propongan un cambio o respondan tu solicitud.</p>
+          <button className="btn-primario w-full" disabled={ocupado || estado === 'cargando'} onClick={activar}>Activar avisos</button>
+        </>
+      )}
+    </section>
   )
 }
 

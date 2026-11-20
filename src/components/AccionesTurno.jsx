@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import Icono from './Icono'
 import { Hoja, Cargando } from './ui'
 import { TarjetaTurno, ListaAvisos, HojaAvisos, Segmentado } from './turnos'
-import { rpc, textoTurno, nombreBonito, iniciales, enlaceWhatsApp, urlSolicitud, TIPO } from '../lib/datos'
+import { rpc, textoTurno, nombreBonito, iniciales, enlaceWhatsApp, enlaceWaA, urlSolicitud, TIPO } from '../lib/datos'
 import { fechaCorta, horario, sumarDias, hoy, inicioMes, finMes, fechaNumerica } from '../lib/fechas'
 import { vibrar } from '../lib/tema'
 
@@ -104,7 +104,15 @@ export function BuscarCambio({ t, onCerrar, avisar, onListo }) {
                     {!o.tiene_cuenta && <span className="text-xs text-slate-500">Todavía no usa Chambea</span>}
                   </span>
                   {o.tiene_cuenta ? (
-                    <button className="btn-primario shrink-0 px-3 py-2 text-sm" onClick={() => setElegido(o)}>Proponer</button>
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      {o.telefono && (
+                        <a className="btn-secundario px-2.5 py-2 text-emerald-700" target="_blank" rel="noreferrer" aria-label="Escribir por WhatsApp"
+                          href={enlaceWaA(o.telefono, `Hola ${nombreBonito(o.persona).split(' ')[0]}, ¿te sirve cambiar tu ${fechaCorta(o.fecha)} (${horario(o.etiqueta)}) por mi ${fechaCorta(t.fecha)} (${horario(t.etiqueta)})?`)}>
+                          <Icono n="whatsapp" size={18} />
+                        </a>
+                      )}
+                      <button className="btn-primario px-3 py-2 text-sm" onClick={() => setElegido(o)}>Proponer</button>
+                    </span>
                   ) : (
                     <a className="btn-secundario shrink-0 px-3 py-2 text-sm" target="_blank" rel="noreferrer"
                       href={enlaceWhatsApp(`Hola ${nombreBonito(o.persona).split(' ')[0]}, ¿te sirve cambiar tu ${fechaCorta(o.fecha)} (${horario(o.etiqueta)}) por mi ${fechaCorta(t.fecha)} (${horario(t.etiqueta)})? Lo arreglamos en Chambea: ${window.location.origin}`)}>
@@ -135,6 +143,7 @@ function Proponer({ t, o, onCerrar, avisar, onListo }) {
   const [nota, setNota] = useState('')
   const [avisos, setAvisos] = useState(null)
   const [enviando, setEnviando] = useState(false)
+  const [enviada, setEnviada] = useState(null)
 
   const enviar = async (confirmo = false) => {
     setEnviando(true)
@@ -142,13 +151,29 @@ function Proponer({ t, o, onCerrar, avisar, onListo }) {
       const r = await rpc('proponer_permuta', { p_mi_turno: t.id, p_su_turno: o.turno_id, p_nota: nota || null, p_confirmo_choque: confirmo })
       if (!r.ok) return setAvisos(r.choques)
       vibrar()
+      setAvisos(null)
       avisar(`Propuesta enviada a ${nombreBonito(o.persona).split(' ')[0]} 📩`)
-      onListo()
+      if (o.telefono) setEnviada(r.solicitud_id)
+      else onListo()
     } catch (e) {
       avisar(e.message, 'error')
     } finally {
       setEnviando(false)
     }
+  }
+
+  if (enviada) {
+    const nombre = nombreBonito(o.persona).split(' ')[0]
+    return (
+      <Hoja titulo="Propuesta enviada" icono="ok" onCerrar={onListo}>
+        <p className="text-sm text-slate-600">{nombre} ya la tiene en Chambea. ¿Le avisas por WhatsApp para que la vea rápido?</p>
+        <a className="btn-primario mt-4 flex items-center justify-center gap-2 py-3" target="_blank" rel="noreferrer"
+          href={enlaceWaA(o.telefono, `Hola ${nombre}, te propuse un cambio en Chambea: mi ${fechaCorta(t.fecha)} (${horario(t.etiqueta)}) por tu ${fechaCorta(o.fecha)} (${horario(o.etiqueta)}). ${urlSolicitud(enviada)}`)}>
+          <Icono n="whatsapp" size={20} />Avisar a {nombre} por WhatsApp
+        </a>
+        <button className="btn-secundario mt-2 w-full" onClick={onListo}>Listo</button>
+      </Hoja>
+    )
   }
 
   return (

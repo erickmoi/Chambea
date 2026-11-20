@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { supabase } from './supabase'
+import { desactivarPush } from './push'
 
 const AuthContext = createContext(null)
 
@@ -31,6 +32,7 @@ export function AuthProvider({ children }) {
   }, [cargarCuenta])
 
   const salir = async () => {
+    await desactivarPush().catch(() => {})
     await supabase.auth.signOut()
   }
 

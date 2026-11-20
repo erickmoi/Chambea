@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase, emailDe, normalizarUsuario, mensajeError } from '../lib/supabase'
+import { telValido, limpiarTel } from '../lib/datos'
 import { entrarConClave } from '../lib/acceso'
 import CampoClave, { claveValida } from '../components/CampoClave'
 import Icono from '../components/Icono'
@@ -8,6 +9,7 @@ export default function Login() {
   const [modo, setModo] = useState('entrar') // 'entrar' | 'crear'
   const [usuario, setUsuario] = useState('')
   const [nombre, setNombre] = useState('')
+  const [telefono, setTelefono] = useState('')
   const [pin, setPin] = useState('')
   const [pin2, setPin2] = useState('')
   const [error, setError] = useState('')
@@ -23,6 +25,7 @@ export default function Login() {
       const problema = claveValida(pin)
       if (problema) return setError(problema)
       if (nombre.trim().split(/\s+/).length < 2) return setError('Escribe tu nombre completo, como aparece en el horario.')
+      if (!telValido(telefono)) return setError('Escribe tu número de WhatsApp de 8 dígitos (empieza con 6 o 7).')
       if (pin !== pin2) return setError('Los PIN no coinciden. Escríbelo igual las dos veces.')
     } else if (!pin) return setError('Escribe tu PIN.')
 
@@ -32,7 +35,7 @@ export default function Login() {
         const { data, error } = await supabase.auth.signUp({
           email: emailDe(u),
           password: pin,
-          options: { data: { usuario: u, nombre: nombre.trim() } },
+          options: { data: { usuario: u, nombre: nombre.trim(), telefono: limpiarTel(telefono) } },
         })
         if (error) {
           if (/already|registered|exists/i.test(error.message)) throw new Error('Ese usuario ya existe. Elige otro.')
@@ -83,6 +86,17 @@ export default function Login() {
               <input id="nombre" className="input" maxLength={80} autoComplete="name" placeholder="ej. María José López Pérez"
                 value={nombre} onChange={(e) => setNombre(e.target.value)} />
               <p className="mt-1 text-xs text-slate-500">Con esto te enlazamos a tus turnos.</p>
+            </div>
+          )}
+          {modo === 'crear' && (
+            <div>
+              <label className="etiqueta" htmlFor="tel">WhatsApp</label>
+              <div className="flex items-center gap-2">
+                <span className="rounded-xl bg-slate-100 px-3 py-2.5 text-slate-600">+503</span>
+                <input id="tel" className="input mono" inputMode="tel" autoComplete="tel-national" maxLength={9} placeholder="7000-0000"
+                  value={telefono} onChange={(e) => setTelefono(e.target.value.replace(/[^\d-]/g, ''))} />
+              </div>
+              <p className="mt-1 text-xs text-slate-500">Para que tus compañeros te escriban sobre los cambios.</p>
             </div>
           )}
           <div>

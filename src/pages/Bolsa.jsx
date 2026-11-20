@@ -10,6 +10,10 @@ import { vibrar } from '../lib/tema'
 const FILTROS = [{ id: 'todo', texto: 'Todo' }, ...Object.entries(TIPO).map(([id, t]) => ({ id, texto: t.texto }))]
 
 export default function Bolsa({ cuenta, avisar, onAbrirSolicitud, recarga }) {
+  const deshacer = async (c) => {
+    if (!confirm(`¿Deshacer el cambio con ${c.con}? Los turnos vuelven a como estaban.`)) return
+    try { await rpc('deshacer_cambio', { p_cambio_id: c.id }); avisar('Cambio deshecho ↩️'); cargar() } catch (e) { avisar(e.message, 'error') }
+  }
   const [tab, setTab] = useState(() => { try { return localStorage.getItem('chambea.bolsa') || 'planilla' } catch { return 'planilla' } })
   const [filtro, setFiltro] = useState('todo')
   const [lista, setLista] = useState(null)
@@ -79,7 +83,7 @@ export default function Bolsa({ cuenta, avisar, onAbrirSolicitud, recarga }) {
       )}
 
       {tab === 'mios' && !mov && !error && <Cargando filas={3} />}
-      {tab === 'mios' && mov && <Mios mov={mov} onAbrir={onAbrirSolicitud} />}
+      {tab === 'mios' && mov && <Mios mov={mov} onAbrir={onAbrirSolicitud} onDeshacer={deshacer} />}
 
       <button onClick={() => setBusco(true)}
         className="btn-primario fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 flex items-center gap-2 rounded-full px-5 py-3.5 shadow-lg md:bottom-6">
@@ -117,7 +121,7 @@ function TarjetaSolicitud({ s, onClick }) {
   )
 }
 
-function Mios({ mov, onAbrir }) {
+function Mios({ mov, onAbrir, onDeshacer }) {
   const recibidas = mov.respondidas.filter((r) => r.directa && r.estado === 'elegida')
   const elegidas = mov.respondidas.filter((r) => !r.directa && r.estado === 'elegida')
   const vivas = mov.publicadas.filter((s) => ['abierta', 'por_confirmar'].includes(s.estado))
@@ -168,7 +172,8 @@ function Mios({ mov, onAbrir }) {
         <Seccion titulo="Cambios hechos 🔁">
           {mov.cambios.map((c) => (
             <Fila key={c.id} icono="cambio" titulo={`${c.recibi ? 'Recibiste' : 'Entregaste'} ${textoTurno(c.turno)}`}
-              sub={`Con ${c.con} · ${haceCuanto(c.creado)}${c.turno.fecha >= hoy() ? ' · recuerda tramitarlo con jefatura' : ''}`} />
+              sub={`Con ${c.con} · ${haceCuanto(c.creado)}${c.turno.fecha >= hoy() ? ' · recuerda tramitarlo con jefatura' : ''}`}
+              accion={c.se_puede_deshacer && <button className="btn-secundario shrink-0 px-3 py-1.5 text-sm" onClick={() => onDeshacer(c)}>Deshacer</button>} />
           ))}
         </Seccion>
       )}
@@ -185,7 +190,7 @@ function Seccion({ titulo, destacado, children }) {
   )
 }
 
-function Fila({ icono, titulo, sub, onClick }) {
+function Fila({ icono, titulo, sub, onClick, accion }) {
   const Tag = onClick ? 'button' : 'div'
   return (
     <Tag onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
@@ -194,6 +199,7 @@ function Fila({ icono, titulo, sub, onClick }) {
         <span className="block truncate font-medium text-slate-900">{titulo}</span>
         <span className="block truncate text-sm text-slate-500">{sub}</span>
       </span>
+      {accion}
       {onClick && <Icono n="siguiente" size={18} className="text-slate-400" />}
     </Tag>
   )

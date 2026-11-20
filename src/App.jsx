@@ -3,6 +3,7 @@ import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { useAuth, esAdmin } from './lib/auth'
 import Login from './pages/Login.jsx'
 import Pendiente from './pages/Pendiente.jsx'
+import PedirWhatsApp from './pages/PedirWhatsApp.jsx'
 import Calendario from './pages/Calendario.jsx'
 import Bolsa from './pages/Bolsa.jsx'
 import MiCuenta from './pages/MiCuenta.jsx'
@@ -56,6 +57,7 @@ export default function App() {
   if (cargando) return <div className="mx-auto max-w-lg p-6"><Cargando /></div>
   if (!session) return <Login />
   if (!listo) return <Pendiente />
+  if (!cuenta.telefono) return <PedirWhatsApp />
 
   const admin = esAdmin(cuenta)
   const actual = VISTAS_ADMIN.includes(vista) && !admin ? 'horario' : vista

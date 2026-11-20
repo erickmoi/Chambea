@@ -4,7 +4,7 @@ import Icono from './Icono'
 import { Hoja, Cargando } from './ui'
 import { TarjetaTurno, ListaAvisos, HojaAvisos, ChipSeccion } from './turnos'
 import { supabase } from '../lib/supabase'
-import { rpc, TIPO, ESTADO, FUNCION, textoTurno, nombreBonito, iniciales, enlaceWhatsApp, urlSolicitud } from '../lib/datos'
+import { rpc, TIPO, ESTADO, FUNCION, textoTurno, nombreBonito, iniciales, enlaceWhatsApp, enlaceWaA, urlSolicitud } from '../lib/datos'
 import { fechaCorta, haceCuanto } from '../lib/fechas'
 import { vibrar } from '../lib/tema'
 
@@ -88,6 +88,12 @@ export default function Solicitud({ id, cuenta, avisar, onCerrar, onCambio }) {
                           <span className="block font-semibold text-slate-900">{nombreBonito(o.persona_completo)}</span>
                           <span className="mono block text-sm text-slate-600">{o.turno ? `Te da ${textoTurno(o.turno)}` : 'Toma tu turno'}</span>
                         </span>
+                        {o.telefono && (
+                          <a className="btn-secundario px-2.5 py-2 text-emerald-700" target="_blank" rel="noreferrer" aria-label="WhatsApp"
+                            href={enlaceWaA(o.telefono, `Hola ${nombreBonito(o.persona_completo).split(' ')[0]}, vi tu respuesta en Chambea a mi ${textoTurno(d.turno)}. ${urlSolicitud(d.id)}`)}>
+                            <Icono n="whatsapp" size={18} />
+                          </a>
+                        )}
                         {o.estado === 'elegida'
                           ? <span className="text-xs font-semibold text-marca-texto">Esperando que confirme</span>
                           : abierta && <button className="btn-primario px-3 py-2 text-sm" disabled={enviando}
@@ -150,9 +156,21 @@ export default function Solicitud({ id, cuenta, avisar, onCerrar, onCambio }) {
             )
           )}
 
+          {!d.mia && d.autor_tel && ['abierta', 'por_confirmar'].includes(d.estado) && (
+            <a className="btn-secundario flex items-center justify-center gap-2 text-emerald-700" target="_blank" rel="noreferrer"
+              href={enlaceWaA(d.autor_tel, `Hola ${d.autor}, te escribo por tu solicitud en Chambea (${d.turno ? textoTurno(d.turno) : d.fechas.map(fechaCorta).join(', ')}). ${urlSolicitud(d.id)}`)}>
+              <Icono n="whatsapp" size={20} />Escribir a {d.autor}
+            </a>
+          )}
+          {d.mia && d.directa && d.ofertas[0]?.telefono && d.estado === 'por_confirmar' && (
+            <a className="btn-secundario flex items-center justify-center gap-2 text-emerald-700" target="_blank" rel="noreferrer"
+              href={enlaceWaA(d.ofertas[0].telefono, `Hola ${d.ofertas[0].persona}, te propuse un cambio en Chambea: ${urlSolicitud(d.id)}`)}>
+              <Icono n="whatsapp" size={20} />Recordarle a {d.ofertas[0].persona}
+            </a>
+          )}
           {abierta && !d.directa && (
             <a className="btn-secundario flex items-center justify-center gap-2" target="_blank" rel="noreferrer" href={enlaceWhatsApp(textoCompartir)}>
-              <Icono n="whatsapp" size={20} />Compartir a WhatsApp
+              <Icono n="whatsapp" size={20} />Compartir en el grupo
             </a>
           )}
           {d.estado === 'aplicada' && <p className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700">Cambio hecho 🔁. Recuerden tramitarlo con jefatura.</p>}

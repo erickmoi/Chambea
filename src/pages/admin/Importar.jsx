@@ -1,6 +1,6 @@
 // Admin → Cargar horario
 // 1) Elegir el .xlsx · 2) Revisar cada sección (rango, nombres, avisos) · 3) Cargar
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase, mensajeError } from '../../lib/supabase'
 import { leerHorarios, recortar, rangosSugeridos, normalizar } from '../../lib/importador'
 import Icono from '../../components/Icono'
@@ -21,6 +21,7 @@ export default function Importar() {
   const [cargando, setCargando] = useState(false)
   const [resultados, setResultados] = useState(null)
   const [aviso, setAviso] = useState(null)
+  const [historial, setHistorial] = useState(0)
   const input = useRef(null)
   const cerrarAviso = useCallback(() => setAviso(null), [])
 
@@ -74,6 +75,16 @@ export default function Importar() {
     if (!elegidas.length) return
     setCargando(true)
     const res = []
+    // 1) Guardar una copia del archivo para el historial
+    let ruta = null
+    try {
+      const limpio = archivo.name.replace(/[^\w.-]+/g, '_')
+      ruta = `${new Date().toISOString().slice(0, 10)}/${Date.now()}-${limpio}`
+      const { error } = await supabase.storage.from('horarios').upload(ruta, archivo, {
+        contentType: archivo.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
+      if (error) ruta = null
+    } catch { ruta = null }
     try {
       for (const s of elegidas) {
         const r = rangosSugeridos(s.base.desde, s.base.hasta).find((x) => x.id === s.rango)
@@ -89,7 +100,9 @@ export default function Importar() {
         if (error) throw error
         res.push({ seccion: sec.seccion, desde: sec.desde, hasta: sec.hasta, ...data })
       }
+      if (ruta) await supabase.rpc('adjuntar_archivo', { p_importaciones: res.map((r) => r.importacion_id), p_path: ruta })
       setResultados(res)
+      setHistorial((n) => n + 1)
       setSecciones([])
       setArchivo(null)
       setAviso({ tipo: 'ok', texto: 'Horario cargado ✅' })
@@ -140,6 +153,7 @@ export default function Importar() {
       )}
 
       {resultados && <Resultados lista={resultados} />}
+      <Historial recarga={historial} />
     </div>
   )
 }
@@ -258,6 +272,56 @@ function Resultados({ lista }) {
           </ul>
         </div>
       ))}
+    </section>
+  )
+}
+
+// Historial de horarios cargados, con el archivo original para descargar
+function Historial({ recarga }) {
+  const [lista, setLista] = useState(null)
+  useEffect(() => {
+    supabase.from('importaciones')
+      .select('id, seccion, desde, hasta, archivo, archivo_path, resumen, creado, subido:perfiles(nombre)')
+      .order('creado', { ascending: false }).limit(40)
+      .then(({ data }) => setLista(data || []))
+  }, [recarga])
+
+  const descargar = async (ruta) => {
+    const { data, error } = await supabase.storage.from('horarios').createSignedUrl(ruta, 120, { download: true })
+    if (!error) window.open(data.signedUrl, '_blank')
+  }
+
+  if (!lista) return null
+  return (
+    <section className="space-y-2 pt-2">
+      <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <Icono n="historial" size={18} />Historial de cargas
+      </h2>
+      {lista.length === 0 ? <p className="text-sm text-slate-500">Aún no hay cargas.</p> : (
+        <ul className="tarjeta divide-y divide-slate-100 p-0">
+          {lista.map((h) => (
+            <li key={h.id} className="flex items-center gap-3 px-4 py-3">
+              <span className={`h-9 w-1.5 shrink-0 rounded-full ${h.seccion === 'sp' ? 'bg-sp' : 'bg-planilla'}`} />
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium text-slate-900">
+                  {NOMBRE_SECCION[h.seccion]} · {fechaCorta(h.desde)} al {fechaCorta(h.hasta)}
+                </span>
+                <span className="block truncate text-xs text-slate-500">
+                  {new Date(h.creado).toLocaleString('es-SV', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/El_Salvador' })}
+                  {h.subido?.nombre ? ` · ${h.subido.nombre.split(' ')[0]}` : ''}
+                  {h.resumen?.insertados != null ? ` · ${h.resumen.insertados} turnos` : ''}
+                  {h.archivo ? ` · ${h.archivo}` : ''}
+                </span>
+              </span>
+              {h.archivo_path && (
+                <button className="btn-secundario shrink-0 px-2.5 py-2" onClick={() => descargar(h.archivo_path)} aria-label="Descargar archivo">
+                  <Icono n="descargar" size={18} />
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }

@@ -94,3 +94,9 @@ export function nombreBonito(n = '') {
   return p.slice(0, 2).join(' ')
 }
 export const iniciales = (n = '') => nombreBonito(n).split(' ').map((x) => x[0]).join('').slice(0, 2)
+
+// WhatsApp directo a un número de El Salvador (8 dígitos)
+export const enlaceWaA = (tel, texto) => `https://wa.me/503${tel}?text=${encodeURIComponent(texto)}`
+export const telValido = (t) => /^[67]\d{7}$/.test(String(t || '').replace(/\D/g, '').replace(/^503(?=\d{8}$)/, ''))
+export const limpiarTel = (t) => String(t || '').replace(/\D/g, '').replace(/^503(?=\d{8}$)/, '')
+export const telBonito = (t) => (t ? `${t.slice(0, 4)}-${t.slice(4)}` : '')
