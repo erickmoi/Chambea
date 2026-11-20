@@ -8,7 +8,9 @@ export const supabase = createClient(
 
 const DOMINIO = import.meta.env.VITE_EMAIL_DOMAIN || 'chambea.internal'
 
-export const normalizarUsuario = (u) => u.trim().toLowerCase()
+// "Érick Díaz" → "erick.diaz" (sin tildes; espacios pasan a punto)
+export const normalizarUsuario = (u) =>
+  u.trim().toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '.')
 export const emailDe = (usuario) => `${normalizarUsuario(usuario)}@${DOMINIO}`
 
 // Mensaje legible de un error de Supabase/Postgres

@@ -30,10 +30,9 @@ export default function CampoClave({ id, value, onChange, autoComplete = 'curren
   )
 }
 
-// PIN de 6 números o contraseña de 6 a 30 caracteres
+// Cualquier PIN o contraseña de 6 a 30 caracteres (solo números también vale)
 export function claveValida(v) {
-  if (/^\d+$/.test(v)) return v.length === 6 ? null : 'El PIN debe tener 6 números.'
-  if (v.length < 6) return 'La contraseña debe tener al menos 6 caracteres.'
-  if (v.length > 30) return 'La contraseña puede tener hasta 30 caracteres.'
+  if (!v || v.length < 6) return 'Usa al menos 6 caracteres (pueden ser solo números).'
+  if (v.length > 30) return 'Puede tener hasta 30 caracteres.'
   return null
 }

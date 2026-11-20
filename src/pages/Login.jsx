@@ -18,13 +18,13 @@ export default function Login() {
     setError('')
     const u = normalizarUsuario(usuario)
     if (!/^[a-z0-9._]{3,30}$/.test(u))
-      return setError('El usuario debe tener de 3 a 30 letras, números, punto o guion bajo (sin espacios).')
+      return setError('El usuario debe tener de 3 a 30 letras o números (puede llevar punto o guion bajo).')
     if (modo === 'crear') {
       const problema = claveValida(pin)
       if (problema) return setError(problema)
       if (nombre.trim().split(/\s+/).length < 2) return setError('Escribe tu nombre completo, como aparece en el horario.')
       if (pin !== pin2) return setError('Los PIN no coinciden. Escríbelo igual las dos veces.')
-    } else if (pin.length < 6) return setError('Escribe tu PIN completo.')
+    } else if (!pin) return setError('Escribe tu PIN.')
 
     setEnviando(true)
     try {
@@ -36,6 +36,8 @@ export default function Login() {
         })
         if (error) {
           if (/already|registered|exists/i.test(error.message)) throw new Error('Ese usuario ya existe. Elige otro.')
+          if (error.code === 'weak_password' || /password/i.test(error.message))
+            throw new Error('Supabase rechazó ese PIN por débil. Prueba con otro distinto (no 123456).')
           throw error
         }
         if (!data.session) throw new Error('La cuenta se creó, pero no se pudo iniciar sesión. Intenta entrar con tu usuario y PIN.')
@@ -84,7 +86,7 @@ export default function Login() {
             </div>
           )}
           <div>
-            <label className="etiqueta" htmlFor="pin">{modo === 'crear' ? 'PIN de 6 números (o contraseña)' : 'PIN o contraseña'}</label>
+            <label className="etiqueta" htmlFor="pin">{modo === 'crear' ? 'PIN o contraseña (mínimo 6, pueden ser solo números)' : 'PIN o contraseña'}</label>
             <CampoClave id="pin" autoComplete={modo === 'crear' ? 'new-password' : 'current-password'} value={pin} onChange={setPin} />
             <p className="mt-1 text-xs text-slate-500">Toca <b>ABC</b> para escribir letras.</p>
           </div>
