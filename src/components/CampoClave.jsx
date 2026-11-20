@@ -7,7 +7,7 @@ export default function CampoClave({ id, value, onChange, autoComplete = 'curren
   const [ver, setVer] = useState(false)
   return (
     <div className={`relative ${className}`}>
-      <input id={id} className={`input pr-24 ${letras ? '' : 'tracking-[0.4em]'}`}
+      <input id={id} className={`input pr-24 ${letras || !value ? '' : 'tracking-[0.4em]'}`}
         type={ver ? 'text' : 'password'} inputMode={letras ? 'text' : 'numeric'}
         autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={30}
         autoComplete={autoComplete} placeholder={placeholder} autoFocus={autoFocus}

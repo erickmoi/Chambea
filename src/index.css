@@ -2,7 +2,14 @@
 
 /* ---------- Colores de marca (se cambian en Ajustes → Apariencia) ---------- */
 @theme {
-  --color-marca: #312e81;
+  --color-marca: #0f5f52;
+  --font-sans: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* Secciones: planilla (verde azulado) y SP (violeta) */
+  --color-planilla: #0f6e56;
+  --color-planilla-claro: #e1f5ee;
+  --color-sp: #5b4bc4;
+  --color-sp-claro: #eeedfe;
   --color-sobre-marca: #ffffff;
   --color-marca-texto: color-mix(in oklab, var(--color-marca) 88%, black);
   --color-marca-claro: color-mix(in oklab, var(--color-marca) 12%, white);
@@ -36,6 +43,10 @@
   --color-amber-200: #5c4310;
   --color-emerald-50: #0b2a20;
   --color-emerald-200: #14532d;
+  --color-planilla: #5dcaa5;
+  --color-planilla-claro: #0b2f27;
+  --color-sp: #afa9ec;
+  --color-sp-claro: #231f4a;
 }
 
 /* iOS 26 difumina una franja bajo la barra de estado en apps instaladas.
@@ -49,7 +60,7 @@ html, body { overflow-x: clip; }
 /* Íconos SVG: llenan su caja y toman el color del texto */
 .icono > svg { display: block; width: 100%; height: 100%; }
 body {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;
   background: var(--color-slate-50);
   color: var(--color-slate-900);
@@ -77,6 +88,9 @@ body {
 @utility etiqueta {
   @apply mb-1 block text-sm font-medium text-slate-600;
 }
+
+/* Horas y números con ancho fijo */
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 
 /* Filas que solo se deslizan a los lados (categorías, pestañas) */
 .fila-lateral {

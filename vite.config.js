@@ -16,4 +16,9 @@ const archivoVersion = {
 export default defineConfig({
   define: { __VERSION__: JSON.stringify(VERSION) },
   plugins: [react(), tailwindcss(), archivoVersion],
+  build: {
+    rollupOptions: {
+      output: { manualChunks: { react: ['react', 'react-dom'], supabase: ['@supabase/supabase-js'] } },
+    },
+  },
 })
