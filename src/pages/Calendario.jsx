@@ -4,7 +4,7 @@ import Icono from '../components/Icono'
 import { Cargando, Hoja } from '../components/ui'
 import { TarjetaTurno, Segmentado, momento, letraSeccion } from '../components/turnos'
 import DeTurno from '../components/DeTurno'
-import { pausasVisibles } from '../lib/tema'
+import { pausasVisibles, guardarPausasVisibles } from '../lib/tema'
 import { HojaTurno, BuscarCambio, PublicarTurno, CorregirTurno } from '../components/AccionesTurno'
 import { misTurnos, rpc, exportarIcs, exportarCsv } from '../lib/datos'
 import {
@@ -32,6 +32,7 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
   const [diaMes, setDiaMes] = useState(hoy)
   const [exportar, setExportar] = useState(false)
   const [deTurno, setDeTurno] = useState(null)
+  const [pausas, setPausas] = useState(pausasVisibles)
   const refResumen = useRef(null)
 
   useEffect(() => guardar('chambea.vista', vista), [vista])
@@ -102,26 +103,30 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
   const cerrarTodo = () => { setSel(null); setAccion(null) }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4 p-4">
-      <div className="flex items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Mi horario</h1>
-        <button className="btn-secundario flex items-center gap-1.5 px-3 py-2 text-sm" onClick={() => setExportar(true)}>
-          <Icono n="descargar" size={18} />Exportar
-        </button>
+    <div className="mx-auto max-w-4xl space-y-3 p-4">
+      {/* Barra compacta: título, navegación y filtros en dos líneas */}
+      <div className="flex items-center gap-1">
+        <h1 className="mr-auto whitespace-nowrap text-lg font-bold tracking-tight text-slate-900">Mi horario</h1>
+        <button className="boton-icono h-9 min-h-9 w-9 min-w-9 text-slate-700" onClick={() => mover(-1)} aria-label={vista === 'mes' ? 'Mes anterior' : 'Semana anterior'}><Icono n="anterior" size={18} /></button>
+        <h2 className="min-w-0 truncate text-center text-sm font-semibold capitalize text-slate-900" aria-live="polite">{titulo}</h2>
+        <button className="boton-icono h-9 min-h-9 w-9 min-w-9 text-slate-700" onClick={() => mover(1)} aria-label={vista === 'mes' ? 'Mes siguiente' : 'Semana siguiente'}><Icono n="siguiente" size={18} /></button>
+        <button className="rounded-lg px-2 py-1.5 text-xs font-bold text-marca-texto ring-1 ring-slate-200" onClick={() => { setCursor(hoy()); setDiaMes(hoy()) }}>Hoy</button>
+        <button className="boton-icono h-9 min-h-9 w-9 min-w-9 text-slate-700" onClick={() => setExportar(true)} aria-label="Exportar"><Icono n="descargar" size={18} /></button>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2">
-        <Segmentado etiqueta="Vista" opciones={VISTAS} valor={vista} onCambio={setVista} />
-        <Segmentado etiqueta="Mostrar" valor={filtro} onCambio={setFiltro} opciones={[
-          { id: 'todo', texto: 'Todo' }, { id: 'planilla', texto: 'Planilla' }, { id: 'sp', texto: 'Servicios Profesionales' },
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Segmentado compacto etiqueta="Vista" valor={vista} onCambio={setVista}
+          opciones={VISTAS.map((v) => ({ id: v.id, icono: v.icono, etiqueta: v.texto, texto: <span className="hidden sm:inline">{v.texto}</span> }))}
+          className="grid-flow-col" />
+        <Segmentado compacto etiqueta="Mostrar" valor={filtro} onCambio={setFiltro} opciones={[
+          { id: 'todo', texto: 'Todo' }, { id: 'planilla', texto: 'P', etiqueta: 'Planilla' }, { id: 'sp', texto: 'SP', etiqueta: 'Servicios Profesionales' },
         ]} />
-      </div>
-
-      <div className="flex items-center gap-1.5">
-        <button className="btn-secundario boton-icono rounded-xl" onClick={() => mover(-1)} aria-label={vista === 'mes' ? 'Mes anterior' : 'Semana anterior'}><Icono n="anterior" size={18} /></button>
-        <h2 className="min-w-0 flex-1 truncate text-center text-lg font-semibold capitalize text-slate-900" aria-live="polite">{titulo}</h2>
-        <button className="btn-secundario boton-icono rounded-xl" onClick={() => mover(1)} aria-label={vista === 'mes' ? 'Mes siguiente' : 'Semana siguiente'}><Icono n="siguiente" size={18} /></button>
-        <button className="btn-secundario ml-1 px-3 py-2 text-sm" onClick={() => { setCursor(hoy()); setDiaMes(hoy()) }}>Hoy</button>
+        {vista === 'agenda' && (
+          <button onClick={() => { setPausas(!pausas); guardarPausasVisibles(!pausas) }} aria-pressed={pausas}
+            className={`ml-auto flex min-h-8 items-center gap-1 rounded-xl px-2.5 text-xs font-semibold transition ${pausas ? 'bg-marca-claro text-marca-texto' : 'bg-slate-100 text-slate-600'}`}>
+            <Icono n={pausas ? 'ocultar' : 'ver'} size={15} />Pausas<span className="sr-only">{pausas ? ': visibles, tocar para ocultar' : ': ocultas, tocar para ver'}</span>
+          </button>
+        )}
       </div>
 
       {datos?.sinConexion && (
@@ -138,7 +143,7 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
 
       {datos && (
         <div key={vista + desde} className="animar-entrada">
-          {vista === 'agenda' && <Agenda semana={semana} porDia={porDia} publicados={publicados} onTurno={abrir} onDeTurno={setDeTurno} />}
+          {vista === 'agenda' && <Agenda semana={semana} porDia={porDia} publicados={publicados} onTurno={abrir} onDeTurno={setDeTurno} pausas={pausas} />}
           {vista === 'semana' && <Semana semana={semana} porDia={porDia} onTurno={abrir} />}
           {vista === 'mes' && <Mes cursor={cursor} porDia={porDia} dia={diaMes} onDia={setDiaMes} publicados={publicados} onTurno={abrir} onDeTurno={setDeTurno} />}
         </div>
@@ -227,7 +232,7 @@ function EtiquetaDia({ iso, onClick }) {
 }
 
 // ---------------------------------------------------------------- Agenda (los días libres ocupan una línea fina)
-function Agenda({ semana, porDia, publicados, onTurno, onDeTurno }) {
+function Agenda({ semana, porDia, publicados, onTurno, onDeTurno, pausas }) {
   return (
     <div className="space-y-1.5">
       {rangoDias(semana, sumarDias(semana, 6)).map((d) => (
@@ -235,7 +240,7 @@ function Agenda({ semana, porDia, publicados, onTurno, onDeTurno }) {
           <div key={d} className="grid grid-cols-[3rem_1fr] gap-2 py-1">
             <EtiquetaDia iso={d} onClick={() => onDeTurno(d)} />
             <div className="space-y-2">
-              {porDia[d].map((t) => <TarjetaTurno key={t.id} t={t} conPausas={pausasVisibles()} publicado={!!publicados[t.id]} onClick={() => onTurno(t)} />)}
+              {porDia[d].map((t) => <TarjetaTurno key={t.id} t={t} conPausas={pausas} publicado={!!publicados[t.id]} onClick={() => onTurno(t)} />)}
             </div>
           </div>
         ) : (
@@ -326,7 +331,7 @@ function Mes({ cursor, porDia, dia, onDia, publicados, onTurno, onDeTurno }) {
           </button>
         </div>
         {(porDia[dia] || []).length
-          ? porDia[dia].map((t) => <TarjetaTurno key={t.id} t={t} conPausas={pausasVisibles()} publicado={!!publicados[t.id]} onClick={() => onTurno(t)} />)
+          ? porDia[dia].map((t) => <TarjetaTurno key={t.id} t={t} conPausas publicado={!!publicados[t.id]} onClick={() => onTurno(t)} />)
           : <div className="flex items-center gap-2 rounded-2xl border border-dashed border-slate-300 px-3 py-2.5 text-sm text-slate-600"><Icono n="cama" size={16} />Libre</div>}
       </div>
     </div>

@@ -2,7 +2,7 @@
 import Icono from './Icono'
 import { Hoja } from './ui'
 import { SECCION, FUNCION, textoAviso } from '../lib/datos'
-import { horario, fechaCorta, horas, pausa, tipoTurno } from '../lib/fechas'
+import { horario, fechaCorta, horas, pausa, tipoTurno, nombreComida } from '../lib/fechas'
 
 export function ChipSeccion({ seccion, className = '' }) {
   const color = seccion === 'sp' ? 'bg-sp-claro text-sp' : 'bg-planilla-claro text-planilla'
@@ -29,7 +29,7 @@ export function Pausas({ t, className = '' }) {
   if (!t.comida && !t.descanso) return null
   return (
     <span className={`flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-600 ${className}`}>
-      {t.comida && <span className="flex items-center gap-1"><Icono n="comida" size={14} />Comida <b className="mono font-semibold">{pausa(t.comida)}</b></span>}
+      {t.comida && <span className="flex items-center gap-1"><Icono n="comida" size={14} />{nombreComida(t)} <b className="mono font-semibold">{pausa(t.comida)}</b></span>}
       {t.descanso && <span className="flex items-center gap-1"><Icono n="cafe" size={14} />Descanso <b className="mono font-semibold">{pausa(t.descanso)}</b></span>}
     </span>
   )
@@ -95,14 +95,14 @@ export function HojaAvisos({ avisos, onCancelar, onContinuar, enviando }) {
 }
 
 // Selector segmentado con animación de la opción activa
-export function Segmentado({ opciones, valor, onCambio, className = '', etiqueta }) {
+export function Segmentado({ opciones, valor, onCambio, className = '', etiqueta, compacto = false }) {
   return (
-    <div role="group" aria-label={etiqueta} className={`grid rounded-xl bg-slate-100 p-1 text-sm font-semibold ${className}`}
+    <div role="group" aria-label={etiqueta} className={`grid rounded-xl bg-slate-100 font-semibold ${compacto ? 'p-0.5 text-xs' : 'p-1 text-sm'} ${className}`}
       style={{ gridTemplateColumns: `repeat(${opciones.length}, minmax(0, 1fr))` }}>
       {opciones.map((o) => (
-        <button key={o.id} type="button" onClick={() => onCambio(o.id)} aria-pressed={valor === o.id}
-          className={`relative flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-1 py-1.5 text-center leading-tight transition-all duration-200 ${valor === o.id ? 'bg-superficie text-marca-texto shadow' : 'text-slate-600'}`}>
-          {o.icono && <Icono n={o.icono} size={17} />}{o.texto}
+        <button key={o.id} type="button" onClick={() => onCambio(o.id)} aria-pressed={valor === o.id} aria-label={o.etiqueta} title={o.etiqueta}
+          className={`relative flex items-center justify-center gap-1.5 rounded-lg text-center leading-tight transition-all duration-200 ${compacto ? 'min-h-8 px-2 py-1' : 'min-h-10 px-1 py-1.5'} ${valor === o.id ? 'bg-superficie text-marca-texto shadow' : 'text-slate-600'}`}>
+          {o.icono && <Icono n={o.icono} size={compacto ? 16 : 17} />}{o.texto}
           {o.cuenta > 0 && <span className="ml-0.5 rounded-full bg-red-600 px-1.5 text-[11px] font-bold leading-4 text-white">{o.cuenta}</span>}
         </button>
       ))}

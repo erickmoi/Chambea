@@ -1,7 +1,17 @@
 // Versión visible en Ajustes y notas de "Novedades" (se muestran una vez por versión)
-export const VERSION = '0.6.0'
+export const VERSION = '0.6.1'
 
 export const NOVEDADES = [
+  {
+    version: '0.6.1',
+    titulo: 'Ajustes rápidos',
+    puntos: [
+      'Horario más compacto: vista, filtro P / SP y botón para mostrar u ocultar las pausas en una sola línea.',
+      'En los turnos de noche la comida ahora dice Cena.',
+      'Arreglado: ya se ve quién más está de turno.',
+      'Permutas: nuevo botón “Agregar solicitud” para publicar uno de tus turnos.',
+    ],
+  },
   {
     version: '0.6.0',
     titulo: 'Nueva pantalla de Inicio',

@@ -4,7 +4,7 @@ import Icono from './Icono'
 import { Hoja, Cargando, confirmar } from './ui'
 import { TarjetaTurno, ListaAvisos, HojaAvisos, Segmentado } from './turnos'
 import { rpc, textoTurno, nombreBonito, iniciales, enlaceWhatsApp, enlaceWaA, urlSolicitud, TIPO } from '../lib/datos'
-import { fechaCorta, horario, sumarDias, hoy, inicioMes, finMes, fechaNumerica } from '../lib/fechas'
+import { fechaCorta, horario, sumarDias, hoy, inicioMes, finMes, fechaNumerica, nombreComida } from '../lib/fechas'
 import { vibrar } from '../lib/tema'
 
 export function HojaTurno({ t, publicado, onCerrar, onBuscar, onPublicar, onVerSolicitud, onDeTurno, onCorregir }) {
@@ -341,7 +341,7 @@ export function CorregirTurno({ t, onCerrar, avisar, onListo }) {
       <div className="space-y-4">
         <Horas id="turno" etiqueta="Turno" valor={[ini, fin]} onCambio={([a, b]) => { setIni(a); setFin(b) }} />
         {fin && ini && fin <= ini && <p className="-mt-2 text-xs text-slate-500">Termina al día siguiente.</p>}
-        <Horas id="comida" etiqueta="Comida" valor={comida} onCambio={setComida} />
+        <Horas id="comida" etiqueta={nombreComida({ comida: comida[0] }) === 'Cena' ? 'Cena' : 'Comida'} valor={comida} onCambio={setComida} />
         <Horas id="descanso" etiqueta="Descanso" valor={descanso} onCambio={setDescanso} />
       </div>
       <button className="btn-primario mt-5 w-full py-3" disabled={enviando} onClick={guardar}>{enviando ? 'Guardando…' : 'Guardar corrección'}</button>

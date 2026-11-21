@@ -1,6 +1,6 @@
 // Lecturas y acciones contra Supabase, con caché local para ver el horario sin conexión.
 import { supabase, mensajeError } from './supabase'
-import { horario, fechaCorta, sumarDias } from './fechas'
+import { horario, fechaCorta, sumarDias, nombreComida } from './fechas'
 
 export async function rpc(nombre, args) {
   const { data, error } = await supabase.rpc(nombre, args)
@@ -73,7 +73,7 @@ export function exportarIcs(turnos, nombre) {
     `DTSTART:${icsFecha(t.inicio)}`, `DTEND:${icsFecha(t.fin)}`,
     // Solo los de Servicios Profesionales llevan "SP" antes de la hora; planilla va solo con la hora
     `SUMMARY:${t.seccion === 'sp' ? 'SP ' : ''}${horario(t.etiqueta)}${t.es_cambio ? ' (cambio)' : ''}`,
-    `DESCRIPTION:${[SECCION[t.seccion], FUNCION[t.funcion], t.comida && `Comida ${horario(t.comida)}`, t.descanso && `Descanso ${horario(t.descanso)}`].filter(Boolean).join(' · ')}`,
+    `DESCRIPTION:${[SECCION[t.seccion], FUNCION[t.funcion], t.comida && `${nombreComida(t)} ${horario(t.comida)}`, t.descanso && `Descanso ${horario(t.descanso)}`].filter(Boolean).join(' · ')}`,
     'END:VEVENT'].join('\r\n'))
   descargar(`${nombre}.ics`, ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Chambea//ES', ...ev, 'END:VCALENDAR'].join('\r\n'), 'text/calendar')
 }
@@ -108,7 +108,7 @@ export const telBonito = (t) => (t ? `${t.slice(0, 4)}-${t.slice(4)}` : '')
 // Todos los turnos que tocan ese día (incluye las noches que vienen del día anterior)
 export async function turnosDelDia(fecha) {
   const { data, error } = await supabase.from('turnos')
-    .select('id, persona_id, seccion, fecha, inicio, fin, etiqueta, funcion, es_cambio, persona:personas(nombre)')
+    .select('id, persona_id, seccion, fecha, inicio, fin, etiqueta, funcion, es_cambio, persona:personas!turnos_persona_id_fkey(nombre)')
     .gte('fecha', sumarDias(fecha, -1)).lte('fecha', fecha)
     .lt('inicio', `${sumarDias(fecha, 1)}T00:00:00-06:00`).gt('fin', `${fecha}T00:00:00-06:00`)
     .order('inicio')

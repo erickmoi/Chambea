@@ -6,8 +6,10 @@ import App from './App.jsx'
 import { AuthProvider } from './lib/auth.jsx'
 import { temaInicial } from './lib/tema'
 import { escucharInstalacion } from './lib/instalar'
+import { aplicarLogo, logoGuardado } from './lib/logo'
 
 temaInicial()
+if (logoGuardado() !== 'A') aplicarLogo(logoGuardado())
 escucharInstalacion()
 
 createRoot(document.getElementById('root')).render(

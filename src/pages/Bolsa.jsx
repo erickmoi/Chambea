@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Icono from '../components/Icono'
 import { Cargando, Hoja, confirmar } from '../components/ui'
-import { Segmentado } from '../components/turnos'
+import { Segmentado, TarjetaTurno } from '../components/turnos'
+import { PublicarTurno } from '../components/AccionesTurno'
 import { rpc, TIPO, ESTADO, FUNCION, textoTurno, nombreBonito, misTurnos, evaluarTurno } from '../lib/datos'
 import { supabase } from '../lib/supabase'
 import { fechaCorta, haceCuanto, hoy, sumarDias } from '../lib/fechas'
@@ -25,6 +26,8 @@ export default function Bolsa({ cuenta, avisar, onAbrirSolicitud, recarga, pendi
   const [mov, setMov] = useState(null)
   const [error, setError] = useState('')
   const [mios, setMios] = useState([])
+  const [agregar, setAgregar] = useState(false)
+  const [elegido, setElegido] = useState(null)
   const [minDescanso, setMinDescanso] = useState(8)
 
   useEffect(() => {
@@ -99,7 +102,7 @@ export default function Bolsa({ cuenta, avisar, onAbrirSolicitud, recarga, pendi
             <p className="mt-1 text-sm text-slate-600">Aquí aparecen los turnos que tus compañeros quieren {tab === 'sp' ? 'permutar o donar' : 'permutar'} y que tú puedes tomar. Para publicar uno tuyo, tócalo en tu horario.</p>
           </div>
         ) : (
-          <ul className="escalonado space-y-3">
+          <ul className="escalonado space-y-3 pb-20">
             {visibles.map((s) => <TarjetaSolicitud key={s.id} s={s} onClick={() => onAbrirSolicitud(s.id)} />)}
           </ul>
         )
@@ -107,6 +110,19 @@ export default function Bolsa({ cuenta, avisar, onAbrirSolicitud, recarga, pendi
 
       {tab === 'mios' && !mov && !error && <Cargando filas={3} />}
       {tab === 'mios' && mov && <Mios mov={mov} onAbrir={onAbrirSolicitud} onDeshacer={deshacer} />}
+
+      <button onClick={() => setAgregar(true)}
+        className="btn-primario fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 flex items-center gap-2 rounded-full px-5 py-3.5 shadow-lg md:bottom-6">
+        <Icono n="mas" size={20} />Agregar solicitud
+      </button>
+
+      {agregar && !elegido && (
+        <ElegirTurno cuenta={cuenta} seccion={tab === 'mios' ? null : tab} onCerrar={() => setAgregar(false)} onElegir={setElegido} />
+      )}
+      {elegido && (
+        <PublicarTurno t={elegido} avisar={avisar} onCerrar={() => { setElegido(null); setAgregar(false) }}
+          onListo={() => { cargar() }} />
+      )}
 
     </div>
   )
@@ -229,5 +245,38 @@ function Fila({ icono, titulo, sub, onClick, accion }) {
       {accion}
       {onClick && <Icono n="siguiente" size={18} className="text-slate-400" />}
     </Tag>
+  )
+}
+
+// "Agregar solicitud": elegir uno de mis próximos turnos para publicarlo
+function ElegirTurno({ cuenta, seccion, onCerrar, onElegir }) {
+  const [lista, setLista] = useState(null)
+  const [publicados, setPublicados] = useState({})
+  const [sec, setSec] = useState(seccion || 'planilla')
+  useEffect(() => {
+    Promise.all([misTurnos(cuenta.persona_id, hoy(), sumarDias(hoy(), 60)), rpc('mis_movimientos').catch(() => null)])
+      .then(([r, mov]) => {
+        setLista(r.turnos.filter((t) => new Date(t.inicio) > new Date()))
+        const m = {}
+        for (const s of mov?.publicadas || []) if (s.turno && ['abierta', 'por_confirmar'].includes(s.estado)) m[s.turno.id] = true
+        setPublicados(m)
+      }, () => setLista([]))
+  }, [cuenta.persona_id])
+  const visibles = (lista || []).filter((t) => t.seccion === sec)
+  return (
+    <Hoja titulo="Agregar solicitud" icono="mas" onCerrar={onCerrar}>
+      <p className="mb-3 text-sm text-slate-600">Elige el turno que quieres {sec === 'sp' ? 'permutar o donar' : 'permutar'}.</p>
+      <Segmentado etiqueta="Sección" valor={sec} onCambio={setSec} opciones={[
+        { id: 'planilla', texto: 'Planilla' }, { id: 'sp', texto: 'Servicios Profesionales' },
+      ]} />
+      <div className="mt-3 max-h-[55vh] space-y-2 overflow-y-auto pb-1">
+        {!lista && <Cargando filas={3} />}
+        {lista && visibles.length === 0 && <p className="py-6 text-center text-sm text-slate-600">No tienes turnos próximos de {sec === 'sp' ? 'Servicios Profesionales' : 'planilla'}.</p>}
+        {visibles.map((t) => (
+          <TarjetaTurno key={t.id} t={t} conFecha publicado={publicados[t.id]}
+            onClick={publicados[t.id] ? undefined : () => onElegir(t)} />
+        ))}
+      </div>
+    </Hoja>
   )
 }

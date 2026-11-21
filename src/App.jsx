@@ -16,6 +16,8 @@ import Recorrido, { recorridoVisto } from './components/Recorrido.jsx'
 import { rpc } from './lib/datos'
 import { useActualizacion, actualizarAhora } from './lib/actualizacion'
 import { pantallaInicial } from './lib/tema'
+import { aplicarLogo, logoGuardado, useLogo } from './lib/logo'
+import { supabase } from './lib/supabase'
 import { NOVEDADES, hayNovedades, marcarNovedadesVistas } from './lib/version'
 
 const Admin = lazy(() => import('./pages/admin/Admin.jsx'))
@@ -33,6 +35,7 @@ export default function App() {
   const [recorrido, setRecorrido] = useState(false)
   const [pendientes, setPendientes] = useState(0)
   const nuevaVersion = useActualizacion()
+  const logo = useLogo()
   const [solicitud, setSolicitud] = useState(() => Number(params().get('solicitud')) || null)
   const [aviso, setAviso] = useState(null)
   const [verAvisos, setVerAvisos] = useState(false)
@@ -73,6 +76,13 @@ export default function App() {
     window.addEventListener('offline', off)
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
   }, [])
+
+  // Logo elegido por la administración
+  useEffect(() => {
+    if (!listo) return
+    supabase.from('ajustes').select('logo').eq('id', 1).single()
+      .then(({ data }) => { if (data?.logo && data.logo !== logoGuardado()) aplicarLogo(data.logo) }, () => {})
+  }, [listo])
 
   useEffect(() => {
     if (!listo || !cuenta?.telefono) return
@@ -115,7 +125,7 @@ export default function App() {
       {/* Navegación lateral en PC */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-slate-200 bg-superficie p-4 md:flex">
         <div className="mb-6 flex items-center gap-2 px-2">
-          <img src="/icons/icono-192.png" alt="" className="h-9 w-9 rounded-xl" />
+          <img src={logo} alt="" className="h-9 w-9 rounded-xl" />
           <span className="text-xl font-bold tracking-tight text-slate-900">Chambea</span>
         </div>
         <nav aria-label="Secciones">
@@ -132,7 +142,7 @@ export default function App() {
 
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-superficie/90 px-4 pt-[calc(0.5rem+env(safe-area-inset-top)+var(--espacio-arriba))] pb-2 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center gap-2">
-          <img src="/icons/icono-192.png" alt="" className="h-8 w-8 rounded-lg md:hidden" />
+          <img src={logo} alt="" className="h-8 w-8 rounded-lg md:hidden" />
           <span className="text-lg font-bold tracking-tight text-slate-900 md:hidden">Chambea</span>
           <span className="ml-auto" />
           <BotonAvisos sinLeer={sinLeer} onClick={() => setVerAvisos(true)} />

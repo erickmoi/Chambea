@@ -9,6 +9,7 @@ import {
   animacionesGuardadas, aplicarAnimaciones, pantallaInicial, guardarPantallaInicial, pausasVisibles, guardarPausasVisibles,
 } from '../lib/tema'
 import { es24h, usar24h } from '../lib/fechas'
+import { LOGOS, aplicarLogo } from '../lib/logo'
 import { plataforma, estaInstalada, puedeInstalarDirecto, instalarDirecto, alCambiarInstalable } from '../lib/instalar'
 import { VERSION } from '../lib/version'
 import CampoClave, { claveValida } from '../components/CampoClave'
@@ -307,6 +308,7 @@ export function AjustesAdmin({ avisar }) {
     setGuardando(true)
     try {
       await rpc('guardar_ajustes_generales', { p: cambios })
+      if (cambios.logo) aplicarLogo(cambios.logo)
       setCambios({})
       avisar('Ajustes generales guardados')
     } catch (e) {
@@ -319,6 +321,20 @@ export function AjustesAdmin({ avisar }) {
   return (
     <div className="space-y-4 pb-20">
       <p className="text-sm text-slate-600">Estos ajustes aplican a <b>todo el equipo</b>. Cada quien tiene además sus ajustes personales en Cuenta.</p>
+
+      <section className="tarjeta space-y-3">
+        <h3 className="flex items-center gap-2 font-bold text-slate-900"><Icono n="novedades" size={20} />Logo de la app</h3>
+        <p className="text-xs text-slate-500">Lo ve todo el equipo. En iPhone, el ícono de inicio cambia al volver a agregar la app.</p>
+        <div role="radiogroup" aria-label="Logo de la app" className="grid grid-cols-5 gap-2">
+          {LOGOS.map((l) => (
+            <button key={l.id} role="radio" aria-checked={a.logo === l.id} aria-label={l.texto} onClick={() => poner('logo', l.id)}
+              className={`flex flex-col items-center gap-1 rounded-2xl p-1.5 text-[11px] font-semibold leading-tight text-slate-700 transition active:scale-95 ${a.logo === l.id ? 'bg-marca-claro ring-2 ring-marca' : 'ring-1 ring-slate-200'}`}>
+              <img src={`/icons/logos/${l.id}.svg`} alt="" className="aspect-square w-full rounded-xl" />
+              <span className="line-clamp-2 text-center">{l.texto}</span>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className="tarjeta space-y-4">
         <h3 className="flex items-center gap-2 font-bold text-slate-900"><Icono n="usuarios" size={20} />Cuentas</h3>

@@ -75,6 +75,11 @@ export function tipoTurno(t) {
   return h >= 12 || h < 4 ? 'tarde' : 'manana'
 }
 export const esNoche = (t) => tipoTurno(t) === 'noche'
+// En la noche la comida se llama cena (si empieza de 5 PM en adelante o de madrugada)
+export const nombreComida = (t) => {
+  const h = Number((t?.comida || '').slice(0, 2))
+  return t?.comida && (h >= 17 || h < 5) ? 'Cena' : 'Comida'
+}
 export const esCorto = (t) => ['tarde', 'manana'].includes(tipoTurno(t))
 
 // "en 2 días 5 h" · "en 3 h 20 min" · "en 12 min"

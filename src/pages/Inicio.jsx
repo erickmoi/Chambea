@@ -8,7 +8,7 @@ import { HojaTurno, BuscarCambio, PublicarTurno, CorregirTurno } from '../compon
 import DeTurno from '../components/DeTurno'
 import { misTurnos, rpc, textoTurno, TIPO, nombreBonito } from '../lib/datos'
 import { supabase } from '../lib/supabase'
-import { hoy, sumarDias, fechaCorta, diaLargo, numDia, mesLargo, horario, faltan, hora, pausa } from '../lib/fechas'
+import { hoy, sumarDias, fechaCorta, diaLargo, numDia, mesLargo, horario, faltan, hora, pausa, nombreComida } from '../lib/fechas'
 
 const saludo = () => {
   const h = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/El_Salvador', hour: 'numeric', hourCycle: 'h23' }).format(new Date()))
@@ -190,7 +190,7 @@ function TurnoPrincipal({ t, enCurso, ahora, cuenta, onClick, onDeTurno }) {
 
         {(t.comida || t.descanso) ? (
           <span className="mt-4 grid grid-cols-2 gap-2">
-            <PausaGrande icono="comida" texto="Comida" valor={t.comida} />
+            <PausaGrande icono="comida" texto={nombreComida(t)} valor={t.comida} />
             <PausaGrande icono="cafe" texto="Descanso" valor={t.descanso} />
           </span>
         ) : (
@@ -249,7 +249,7 @@ function Manana({ turnos, onClick }) {
                   <Icono n={m.icono} size={16} className={t.seccion === 'sp' ? 'text-sp' : 'text-planilla'} />
                   <span className="mono font-semibold">{horario(t.etiqueta)}</span>
                   <span className="text-slate-500">· {t.seccion === 'sp' ? 'Servicios Profesionales' : 'Planilla'}</span>
-                  {t.comida && <span className="flex items-center gap-1 text-xs text-slate-500"><Icono n="comida" size={13} />{pausaLarga(t.comida)}</span>}
+                  {t.comida && <span className="flex items-center gap-1 text-xs text-slate-500"><Icono n="comida" size={13} />{nombreComida(t)} {pausaLarga(t.comida)}</span>}
                 </button>
               </li>
             )
