@@ -2,16 +2,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Icono from '../components/Icono'
 import { Cargando, Hoja, confirmar } from '../components/ui'
-import { Segmentado, TarjetaTurno } from '../components/turnos'
+import { Segmentado, TarjetaTurno, momento } from '../components/turnos'
 import { PublicarTurno } from '../components/AccionesTurno'
-import { rpc, TIPO, ESTADO, FUNCION, textoTurno, nombreBonito, misTurnos, evaluarTurno } from '../lib/datos'
-import { supabase } from '../lib/supabase'
-import { fechaCorta, haceCuanto, hoy, sumarDias } from '../lib/fechas'
+import { rpc, TIPO, ESTADO, FUNCION, textoTurno, nombreBonito, misTurnos } from '../lib/datos'
+import { vibrar } from '../lib/tema'
+import { fechaCorta, haceCuanto, hoy, sumarDias, numDia, mesCorto, horario } from '../lib/fechas'
 
 // Planilla solo tiene permutas; Servicios Profesionales tiene permutas y donaciones
 const FILTROS = {
-  planilla: [{ id: 'todo', texto: 'Todo' }, { id: 'sirve', texto: 'Me sirven', icono: 'ok' }],
-  sp: [{ id: 'todo', texto: 'Todo' }, { id: 'sirve', texto: 'Me sirven', icono: 'ok' },
+  planilla: [{ id: 'todo', texto: 'Todo' }, { id: 'sirve', texto: 'Puedo tomar', icono: 'ok' }],
+  sp: [{ id: 'todo', texto: 'Todo' }, { id: 'sirve', texto: 'Puedo tomar', icono: 'ok' },
     { id: 'permuta', texto: 'Permutas', icono: 'cambio' }, { id: 'ceder', texto: 'Donaciones', icono: 'ceder' }],
 }
 
@@ -25,27 +25,32 @@ export default function Bolsa({ cuenta, avisar, onAbrirSolicitud, recarga, pendi
   const [lista, setLista] = useState(null)
   const [mov, setMov] = useState(null)
   const [error, setError] = useState('')
-  const [mios, setMios] = useState([])
   const [agregar, setAgregar] = useState(false)
   const [elegido, setElegido] = useState(null)
-  const [minDescanso, setMinDescanso] = useState(8)
+  const [enviando, setEnviando] = useState(null)
 
-  useEffect(() => {
-    supabase.from('ajustes').select('min_descanso_planilla_h').eq('id', 1).single()
-      .then(({ data }) => data && setMinDescanso(data.min_descanso_planilla_h))
-  }, [])
+  // Orden: primero lo que puedo tomar, luego lo mío, al final (en gris) lo que no puedo
+  const evaluadas = useMemo(() => {
+    const peso = (s) => (s.mia ? 1 : ['permutar', 'sirve'].includes(s.viabilidad?.estado) ? 0 : 2)
+    return [...(lista || [])].sort((a, b) => peso(a) - peso(b))
+  }, [lista])
 
-  // Mis turnos alrededor de las fechas de la bolsa, para decir si cada turno me sirve
-  useEffect(() => {
-    const fechas = (lista || []).filter((s) => s.turno && !s.mia).map((s) => s.turno.fecha).sort()
-    if (!fechas.length) return
-    misTurnos(cuenta.persona_id, sumarDias(fechas[0], -1), sumarDias(fechas[fechas.length - 1], 1))
-      .then((r) => setMios(r.turnos), () => {})
-  }, [lista, cuenta.persona_id])
-
-  const evaluadas = useMemo(() => (lista || []).map((s) => ({
-    ...s, evaluacion: !s.mia && s.tipo !== 'busco' ? evaluarTurno(s.turno, mios, minDescanso) : null,
-  })), [lista, mios, minDescanso])
+  // Ofrecer directo desde la tarjeta: mi turno a cambio (permuta) o tomarlo (donación)
+  const ofrecer = async (sol, mio) => {
+    const ok = await confirmar(mio
+      ? { titulo: 'Ofrecer permuta', icono: 'cambio', boton: 'Ofrecer',
+          texto: `Le ofreces a ${nombreBonito(sol.autor_completo).split(' ')[0]} tu turno del ${fechaChip(mio.fecha)} (${horario(mio.etiqueta)}) por su ${fechaChip(sol.turno.fecha)}.` }
+      : { titulo: 'Tomar turno', icono: 'ceder', boton: 'Lo quiero',
+          texto: `Pides el turno del ${fechaChip(sol.turno.fecha)} (${horario(sol.turno.etiqueta)}). ${nombreBonito(sol.autor_completo).split(' ')[0]} elige a quién se lo da.` })
+    if (!ok) return
+    setEnviando(sol.id)
+    try {
+      await rpc('ofertar', { p_solicitud_id: sol.id, p_turno_id: mio?.id ?? null })
+      vibrar()
+      avisar(mio ? 'Permuta ofrecida. Te avisamos cuando responda.' : 'Listo, te avisamos si te lo da.')
+      cargar()
+    } catch (e) { avisar(e.message, 'error') } finally { setEnviando(null) }
+  }
 
   useEffect(() => { try { localStorage.setItem('chambea.bolsa', tab) } catch { /* nada */ } setFiltro('todo') }, [tab])
 
@@ -61,7 +66,7 @@ export default function Bolsa({ cuenta, avisar, onAbrirSolicitud, recarga, pendi
 
   useEffect(() => { setLista(null); setMov(null); cargar() }, [cargar, recarga])
 
-  const visibles = evaluadas.filter((s) => filtro === 'todo' || (filtro === 'sirve' ? s.evaluacion?.estado === 'sirve' : s.tipo === filtro))
+  const visibles = evaluadas.filter((s) => filtro === 'todo' || (filtro === 'sirve' ? ['permutar', 'sirve'].includes(s.viabilidad?.estado) : s.tipo === filtro))
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4">
@@ -103,7 +108,7 @@ export default function Bolsa({ cuenta, avisar, onAbrirSolicitud, recarga, pendi
           </div>
         ) : (
           <ul className="escalonado space-y-3 pb-20">
-            {visibles.map((s) => <TarjetaSolicitud key={s.id} s={s} onClick={() => onAbrirSolicitud(s.id)} />)}
+            {visibles.map((s) => <TarjetaSolicitud key={s.id} s={s} enviando={enviando === s.id} onOfrecer={ofrecer} onClick={() => onAbrirSolicitud(s.id)} />)}
           </ul>
         )
       )}
@@ -128,40 +133,106 @@ export default function Bolsa({ cuenta, avisar, onAbrirSolicitud, recarga, pendi
   )
 }
 
-function TarjetaSolicitud({ s, onClick }) {
-  const tipo = TIPO[s.tipo]
+const fechaChip = (iso) => `${numDia(iso)} ${mesCorto(iso)}` // '28 nov'
+
+// Bloque de fecha grande: el día se ve de un vistazo
+function FechaGrande({ t }) {
+  const sp = t.seccion === 'sp'
+  const m = momento(t)
   return (
-    <li>
-      <button onClick={onClick} className="w-full space-y-2 rounded-2xl bg-superficie p-4 text-left ring-1 ring-slate-200 transition active:scale-[0.98] hover:ring-slate-300">
-        <div className="flex items-center justify-between gap-2">
-          <span className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${tipo.color}`}><Icono n={tipo.icono} size={14} />{tipo.texto}</span>
-          <span className="text-xs text-slate-500">{haceCuanto(s.creado)}</span>
-        </div>
-        <p className="text-slate-900">
-          <b>{s.mia ? 'Tú' : nombreBonito(s.autor_completo)}</b>
-          {s.turno ? <> · <span className="font-medium">{textoTurno(s.turno)}</span></> : <> busca turno: <span className="font-medium">{s.fechas.map(fechaCorta).join(', ')}</span></>}
-        </p>
-        {s.tipo === 'permuta' && s.fechas.length > 0 && <p className="text-sm text-slate-500">Le sirven: {s.fechas.map(fechaCorta).join(', ')}</p>}
-        {s.nota && <p className="text-sm italic text-slate-600">“{s.nota}”</p>}
-        <Evaluacion e={s.evaluacion} />
-        <div className="flex items-center gap-2 text-xs text-slate-600">
-          {s.funcion !== 'triaje' && s.funcion !== 'general' && <span className="rounded-full bg-slate-100 px-2 py-0.5">{FUNCION[s.funcion]}</span>}
-          <span>{s.respuestas} respuesta(s)</span>
-          {s.mi_respuesta && <span className="ml-auto font-semibold text-marca-texto">{s.mi_respuesta === 'elegida' ? 'Te eligieron' : s.mi_respuesta === 'pendiente' ? 'Ya respondiste' : ESTADO[s.mi_respuesta]}</span>}
-        </div>
-      </button>
-    </li>
+    <span className={`flex w-16 shrink-0 flex-col items-center justify-center rounded-xl py-2 ${sp ? 'bg-sp-claro text-sp' : 'bg-planilla-claro text-planilla'} ${m.corto ? 'turno-corto' : ''}`}>
+      <span className="mono text-3xl font-bold leading-none">{numDia(t.fecha)}</span>
+      <span className="text-xs font-bold uppercase">{mesCorto(t.fecha)}</span>
+      <Icono n={m.icono} size={16} className="mt-0.5" />
+    </span>
   )
 }
 
-function Evaluacion({ e }) {
-  if (!e) return null
-  const estilos = {
-    sirve: { c: 'bg-emerald-50 text-emerald-700', i: 'ok', t: 'Te sirve: no choca con tus turnos' },
-    choca: { c: 'bg-red-50 text-red-700', i: 'prohibido', t: `Choca con tu turno del ${fechaCorta(e.con?.fecha || hoy())}` },
-    pegado: { c: 'bg-amber-50 text-amber-800', i: 'alerta', t: `Te quedaría pegado a tu turno del ${fechaCorta(e.con?.fecha || hoy())}` },
-  }[e.estado]
-  return <p className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold ${estilos.c}`}><Icono n={estilos.i} size={15} />{estilos.t}</p>
+function TarjetaSolicitud({ s, onClick, onOfrecer, enviando }) {
+  const tipo = TIPO[s.tipo]
+  const v = s.viabilidad
+  const noViable = !s.mia && v?.estado === 'no'
+  const opciones = v?.opciones || []
+  const fechasMias = new Set(opciones.map((o) => o.fecha))
+  return (
+    <li className={`overflow-hidden rounded-2xl bg-superficie ring-1 transition ${noViable ? 'opacity-60 ring-slate-200' : v?.estado === 'permutar' || v?.estado === 'sirve' ? 'ring-emerald-200' : 'ring-slate-200'}`}>
+      <button onClick={onClick} className="w-full space-y-3 p-4 text-left hover:bg-slate-50">
+        <span className="flex items-center justify-between gap-2">
+          <span className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${tipo.color}`}><Icono n={tipo.icono} size={14} />{tipo.texto}</span>
+          <span className="truncate text-sm font-semibold text-slate-900">{s.mia ? 'Tú' : nombreBonito(s.autor_completo)}</span>
+          <span className="ml-auto shrink-0 text-xs text-slate-500">{haceCuanto(s.creado)}</span>
+        </span>
+
+        {s.turno && (
+          <span className="flex items-center gap-3">
+            <FechaGrande t={s.turno} />
+            <span className="min-w-0">
+              <span className="block text-xs font-semibold text-slate-500">{s.tipo === 'permuta' ? 'Entrega' : 'Dona'}</span>
+              <span className="mono block text-xl font-semibold leading-tight text-slate-900">{horario(s.turno.etiqueta)}</span>
+              <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-600">
+                <span>{momento(s.turno).texto}</span>
+                {s.funcion !== 'triaje' && s.funcion !== 'general' && <span className="rounded-full bg-slate-100 px-2 py-0.5 font-semibold">{FUNCION[s.funcion]}</span>}
+              </span>
+            </span>
+          </span>
+        )}
+
+        {s.tipo === 'permuta' && (
+          <span className="block">
+            <span className="mb-1.5 block text-xs font-semibold text-slate-500">Le sirve recibir</span>
+            {s.fechas.length > 0 ? (
+              <span className="flex flex-wrap gap-1.5">
+                {s.fechas.map((f) => (
+                  <span key={f} className={`mono rounded-lg px-2.5 py-1 text-sm font-bold ${fechasMias.has(f) ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                    {fechaChip(f)}
+                  </span>
+                ))}
+              </span>
+            ) : (
+              <span className="text-sm text-slate-700">Cualquier fecha con el mismo horario</span>
+            )}
+          </span>
+        )}
+        {s.nota && <span className="block text-sm italic text-slate-600">“{s.nota}”</span>}
+      </button>
+
+      {/* Viabilidad y acción directa */}
+      {!s.mia && (
+        <div className={`border-t px-4 py-3 ${noViable ? 'border-slate-100 bg-slate-50' : 'border-emerald-100 bg-emerald-50'}`}>
+          {s.mi_respuesta ? (
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-marca-texto">
+              <Icono n="hola" size={18} />{s.mi_respuesta === 'elegida' ? 'Te eligieron: confirma en el detalle' : s.mi_respuesta === 'pendiente' ? 'Ya te ofreciste' : ESTADO[s.mi_respuesta]}
+            </p>
+          ) : v?.estado === 'permutar' ? (
+            <div className="space-y-2">
+              <p className="flex items-center gap-1.5 text-sm font-bold text-emerald-700"><Icono n="ok" size={18} />Puedes permutar</p>
+              <div className="flex flex-wrap gap-2">
+                {opciones.slice(0, 4).map((o) => (
+                  <button key={o.id} disabled={enviando} onClick={() => onOfrecer(s, o)}
+                    className="btn-primario flex items-center gap-1.5 px-3 py-2 text-sm">
+                    <Icono n="cambio" size={16} />Ofrecer mi {fechaChip(o.fecha)}
+                  </button>
+                ))}
+                {opciones.length > 4 && <button onClick={onClick} className="px-2 text-sm font-semibold text-marca-texto">+{opciones.length - 4} más</button>}
+              </div>
+            </div>
+          ) : v?.estado === 'sirve' ? (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="flex items-center gap-1.5 text-sm font-bold text-emerald-700"><Icono n="ok" size={18} />Te sirve</p>
+              <button disabled={enviando} onClick={() => onOfrecer(s, null)} className="btn-primario flex items-center gap-1.5 px-3 py-2 text-sm">
+                <Icono n="ceder" size={16} />Lo quiero
+              </button>
+            </div>
+          ) : (
+            <p className="flex items-center gap-1.5 text-sm text-slate-600"><Icono n="prohibido" size={16} />No puedes: {v?.motivo || 'no cumple las reglas'}</p>
+          )}
+        </div>
+      )}
+      {s.mia && (
+        <p className="border-t border-slate-100 px-4 py-2.5 text-sm text-slate-600">{s.respuestas} respuesta(s) · toca para ver y elegir</p>
+      )}
+    </li>
+  )
 }
 
 function Mios({ mov, onAbrir, onDeshacer }) {

@@ -1,7 +1,18 @@
 // Versión visible en Ajustes y notas de "Novedades" (se muestran una vez por versión)
-export const VERSION = '0.6.1'
+export const VERSION = '0.6.2'
 
 export const NOVEDADES = [
+  {
+    version: '0.6.2',
+    titulo: 'Permutas más claras y con reglas',
+    puntos: [
+      'Cada permuta muestra el día en grande y las fechas que le sirven a quien la publica.',
+      '“Puedes permutar” o “Te sirve”: ofrécete con un toque desde la tarjeta.',
+      'Solo se permuta el mismo horario (7–3 por 7–3, 6–6 por 6–6, día por día, noche por noche).',
+      'No se permiten dos turnos de planilla seguidos ni dos de 12 h de Servicios Profesionales seguidos. Planilla + Servicios Profesionales sí.',
+      'Lo que no puedes tomar aparece al final, en gris, con el motivo.',
+    ],
+  },
   {
     version: '0.6.1',
     titulo: 'Ajustes rápidos',

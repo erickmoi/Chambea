@@ -261,7 +261,7 @@ export function PublicarTurno({ t, onCerrar, avisar, onListo }) {
         <p className="flex items-center gap-2 rounded-xl bg-planilla-claro px-3 py-2 text-sm font-semibold text-planilla"><Icono n="cambio" size={18} />Permuta</p>
       )}
       <p className="mt-2 text-xs text-slate-600">
-        {tipo === 'permuta' && 'Te ofrecerán un turno suyo a cambio y tú eliges.'}
+        {tipo === 'permuta' && `Te ofrecerán un turno suyo con el mismo horario (${horario(t.etiqueta)}) y tú eliges.`}
         {tipo === 'ceder' && 'Lo donas: quien lo tome se queda con él.'}
         {t.seccion === 'planilla' && ' En planilla solo se hacen permutas.'}
       </p>
