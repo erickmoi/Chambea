@@ -186,7 +186,7 @@ function DetalleUsuario({ u, yo, libres, avisar, onCerrar, alListo }) {
         <p className="text-sm text-slate-500">@{u.usuario} · {ROLES[u.rol]}{u.activo ? '' : ' · desactivada'}</p>
         {u.telefono && (
           <a className="btn-secundario flex items-center justify-center gap-2 text-emerald-700" target="_blank" rel="noreferrer"
-            href={enlaceWaA(u.telefono, `Hola ${u.nombre.split(' ')[0]}, `)}>
+            href={enlaceWaA(u.telefono, `¡Hola, ${u.nombre.split(' ')[0]}! 👋 ¿Qué tal? `)}>
             <Icono n="whatsapp" size={20} />WhatsApp {telBonito(u.telefono)}
           </a>
         )}

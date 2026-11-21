@@ -324,7 +324,7 @@ export function AjustesAdmin({ avisar }) {
 
       <section className="tarjeta space-y-3">
         <h3 className="flex items-center gap-2 font-bold text-slate-900"><Icono n="novedades" size={20} />Logo de la app</h3>
-        <p className="text-xs text-slate-500">Lo ve todo el equipo. En iPhone, el ícono de inicio cambia al volver a agregar la app.</p>
+        <p className="text-xs text-slate-500">Lo ve todo el equipo, también en el ícono de inicio. Quien ya instaló la app ve el nuevo ícono al quitarla y volver a agregarla (en iPhone) o al actualizarse sola (en Android).</p>
         <div role="radiogroup" aria-label="Logo de la app" className="grid grid-cols-5 gap-2">
           {LOGOS.map((l) => (
             <button key={l.id} role="radio" aria-checked={a.logo === l.id} aria-label={l.texto} onClick={() => poner('logo', l.id)}

@@ -5,6 +5,7 @@ import { Hoja, Cargando, confirmar, Exito } from './ui'
 import { TarjetaTurno, ListaAvisos, HojaAvisos, ChipSeccion } from './turnos'
 import { supabase } from '../lib/supabase'
 import { rpc, TIPO, ESTADO, FUNCION, textoTurno, nombreBonito, iniciales, enlaceWhatsApp, enlaceWaA, urlSolicitud } from '../lib/datos'
+import { msgAlAutor, msgAlOferente, msgRecordatorio, msgGrupo } from '../lib/mensajes'
 import { fechaCorta, haceCuanto } from '../lib/fechas'
 import { vibrar } from '../lib/tema'
 
@@ -53,7 +54,7 @@ export default function Solicitud({ id, cuenta, avisar, onCerrar, onCambio }) {
   const miOferta = d.ofertas.find((o) => o.mia && ['pendiente', 'elegida'].includes(o.estado))
   const pendientes = d.ofertas.filter((o) => ['pendiente', 'elegida'].includes(o.estado))
   const abierta = d.estado === 'abierta'
-  const textoCompartir = `${tipo.texto} en Chambea (${d.seccion === 'sp' ? 'Servicios Profesionales' : 'Planilla'}): ${d.turno ? textoTurno(d.turno) : d.fechas.map(fechaCorta).join(', ')}. ¿Te sirve? ${urlSolicitud(d.id)}`
+  const textoCompartir = d.turno ? msgGrupo(d.tipo, d.turno, d.fechas, urlSolicitud(d.id)) : `¡Hola, equipo! 👋 ${tipo.texto} en Chambea: ${d.fechas.map(fechaCorta).join(', ')}. ${urlSolicitud(d.id)}`
 
   return (
     <>
@@ -93,7 +94,7 @@ export default function Solicitud({ id, cuenta, avisar, onCerrar, onCambio }) {
                         </span>
                         {o.telefono && (
                           <a className="btn-secundario px-2.5 py-2 text-emerald-700" target="_blank" rel="noreferrer" aria-label="WhatsApp"
-                            href={enlaceWaA(o.telefono, `Hola ${nombreBonito(o.persona_completo).split(' ')[0]}, vi tu respuesta en Chambea a mi ${textoTurno(d.turno)}. ${urlSolicitud(d.id)}`)}>
+                            href={enlaceWaA(o.telefono, msgAlOferente(o.persona_completo, d, o, urlSolicitud(d.id)))}>
                             <Icono n="whatsapp" size={18} />
                           </a>
                         )}
@@ -161,13 +162,13 @@ export default function Solicitud({ id, cuenta, avisar, onCerrar, onCambio }) {
 
           {!d.mia && d.autor_tel && ['abierta', 'por_confirmar'].includes(d.estado) && (
             <a className="btn-secundario flex items-center justify-center gap-2 text-emerald-700" target="_blank" rel="noreferrer"
-              href={enlaceWaA(d.autor_tel, `Hola ${d.autor}, te escribo por tu solicitud en Chambea (${d.turno ? textoTurno(d.turno) : d.fechas.map(fechaCorta).join(', ')}). ${urlSolicitud(d.id)}`)}>
+              href={enlaceWaA(d.autor_tel, msgAlAutor(d.autor_completo || d.autor, d, urlSolicitud(d.id)))}>
               <Icono n="whatsapp" size={20} />Escribir a {d.autor}
             </a>
           )}
           {d.mia && d.directa && d.ofertas[0]?.telefono && d.estado === 'por_confirmar' && (
             <a className="btn-secundario flex items-center justify-center gap-2 text-emerald-700" target="_blank" rel="noreferrer"
-              href={enlaceWaA(d.ofertas[0].telefono, `Hola ${d.ofertas[0].persona}, te propuse un cambio en Chambea: ${urlSolicitud(d.id)}`)}>
+              href={enlaceWaA(d.ofertas[0].telefono, msgRecordatorio(d.ofertas[0].persona_completo || d.ofertas[0].persona, urlSolicitud(d.id)))}>
               <Icono n="whatsapp" size={20} />Recordarle a {d.ofertas[0].persona}
             </a>
           )}

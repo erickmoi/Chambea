@@ -6,6 +6,7 @@ import { TarjetaTurno, ListaAvisos, HojaAvisos, Segmentado } from './turnos'
 import { rpc, textoTurno, nombreBonito, iniciales, enlaceWhatsApp, enlaceWaA, urlSolicitud, TIPO } from '../lib/datos'
 import { fechaCorta, horario, sumarDias, hoy, inicioMes, finMes, fechaNumerica, nombreComida } from '../lib/fechas'
 import { vibrar } from '../lib/tema'
+import { msgPropuesta, msgGrupo, msgInvitar } from '../lib/mensajes'
 
 export function HojaTurno({ t, publicado, onCerrar, onBuscar, onPublicar, onVerSolicitud, onDeTurno, onCorregir }) {
   const futuro = new Date(t.inicio) > new Date()
@@ -117,7 +118,7 @@ export function BuscarCambio({ t, onCerrar, avisar, onListo }) {
                     <span className="flex shrink-0 items-center gap-1.5">
                       {o.telefono && (
                         <a className="btn-secundario px-2.5 py-2 text-emerald-700" target="_blank" rel="noreferrer" aria-label="Escribir por WhatsApp"
-                          href={enlaceWaA(o.telefono, `Hola ${nombreBonito(o.persona).split(' ')[0]}, ¿te sirve cambiar tu ${fechaCorta(o.fecha)} (${horario(o.etiqueta)}) por mi ${fechaCorta(t.fecha)} (${horario(t.etiqueta)})?`)}>
+                          href={enlaceWaA(o.telefono, msgPropuesta(o.persona, t, { ...o, seccion: t.seccion }))}>
                           <Icono n="whatsapp" size={18} />
                         </a>
                       )}
@@ -125,7 +126,7 @@ export function BuscarCambio({ t, onCerrar, avisar, onListo }) {
                     </span>
                   ) : (
                     <a className="btn-secundario shrink-0 px-3 py-2 text-sm" target="_blank" rel="noreferrer"
-                      href={enlaceWhatsApp(`Hola ${nombreBonito(o.persona).split(' ')[0]}, ¿te sirve cambiar tu ${fechaCorta(o.fecha)} (${horario(o.etiqueta)}) por mi ${fechaCorta(t.fecha)} (${horario(t.etiqueta)})? Lo arreglamos en Chambea: ${window.location.origin}`)}>
+                      href={enlaceWhatsApp(`${msgPropuesta(o.persona, t, { ...o, seccion: t.seccion })}\n\n${msgInvitar('', window.location.origin).split('\n\n').slice(1).join('\n\n')}`)}>
                       Invitar
                     </a>
                   )}
@@ -178,7 +179,7 @@ function Proponer({ t, o, onCerrar, avisar, onListo }) {
       <Hoja titulo="Propuesta enviada" icono="ok" onCerrar={onListo}>
         <p className="text-sm text-slate-600">{nombre} ya la tiene en Chambea. ¿Le avisas por WhatsApp para que la vea rápido?</p>
         <a className="btn-primario mt-4 flex items-center justify-center gap-2 py-3" target="_blank" rel="noreferrer"
-          href={enlaceWaA(o.telefono, `Hola ${nombre}, te propuse un cambio en Chambea: mi ${fechaCorta(t.fecha)} (${horario(t.etiqueta)}) por tu ${fechaCorta(o.fecha)} (${horario(o.etiqueta)}). ${urlSolicitud(enviada)}`)}>
+          href={enlaceWaA(o.telefono, msgPropuesta(o.persona, t, { ...o, seccion: t.seccion }, urlSolicitud(enviada)))}>
           <Icono n="whatsapp" size={20} />Avisar a {nombre} por WhatsApp
         </a>
         <button className="btn-secundario mt-2 w-full" onClick={onListo}>Listo</button>
@@ -237,7 +238,7 @@ export function PublicarTurno({ t, onCerrar, avisar, onListo }) {
   }
 
   if (hecha) {
-    const texto = `${TIPO[tipo].texto} en Chambea: ${textoTurno(t)}. ¿Te sirve? ${urlSolicitud(hecha)}`
+    const texto = msgGrupo(tipo, t, tipo === 'permuta' ? fechas : [], urlSolicitud(hecha))
     return (
       <Hoja titulo="Publicado" icono="ok" onCerrar={onCerrar}>
         <p className="text-sm text-slate-600">Ya está en Permutas. Avisamos a quienes pueden tomarlo. ¿Lo compartes en el grupo?</p>

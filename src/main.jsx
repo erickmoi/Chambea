@@ -9,7 +9,7 @@ import { escucharInstalacion } from './lib/instalar'
 import { aplicarLogo, logoGuardado } from './lib/logo'
 
 temaInicial()
-if (logoGuardado() !== 'A') aplicarLogo(logoGuardado())
+aplicarLogo(logoGuardado())
 escucharInstalacion()
 
 createRoot(document.getElementById('root')).render(

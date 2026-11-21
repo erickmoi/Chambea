@@ -1,1 +1,4 @@
+# Ícono y manifest según el logo elegido por la administración (función "marca" de Supabase)
+/manifest.webmanifest  https://tocahnikeidppzkyotic.supabase.co/functions/v1/marca/manifest.webmanifest  200!
+/marca/*               https://tocahnikeidppzkyotic.supabase.co/functions/v1/marca/:splat                200!
 /*    /index.html   200

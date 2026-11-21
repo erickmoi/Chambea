@@ -1,7 +1,17 @@
 // Versión visible en Ajustes y notas de "Novedades" (se muestran una vez por versión)
-export const VERSION = '0.6.2'
+export const VERSION = '0.6.3'
 
 export const NOVEDADES = [
+  {
+    version: '0.6.3',
+    titulo: 'Detalles',
+    puntos: [
+      'Máximo 24 h de trabajo seguidas sumando planilla y Servicios Profesionales.',
+      'Mensajes de WhatsApp más amables y claros para proponer, responder y compartir.',
+      'En Inicio, “Cambiar este turno” solo aparece cuando aún no empieza; si estás en turno, ves tu próximo turno para cambiarlo.',
+      'El ícono de la pantalla de inicio sigue al logo que elige la administración.',
+    ],
+  },
   {
     version: '0.6.2',
     titulo: 'Permutas más claras y con reglas',

@@ -5,6 +5,7 @@ import { Aviso, Cargando } from '../../components/ui'
 import { Segmentado } from '../../components/turnos'
 import { AjustesAdmin } from '../MiCuenta.jsx'
 import { rpc, enlaceWhatsApp, nombreBonito } from '../../lib/datos'
+import { msgInvitar } from '../../lib/mensajes'
 import { hoy, sumarDias, fechaCorta, finMes, numDia, haceCuanto } from '../../lib/fechas'
 
 const Usuarios = lazy(() => import('./Usuarios.jsx'))
@@ -68,9 +69,7 @@ function Panel({ irA }) {
   const pct = p.personas ? Math.round((p.con_cuenta / p.personas) * 100) : 0
   const recordatorios = recordatoriosCarga(p)
   const enlace = window.location.origin
-  const invitar = (nombre) => enlaceWhatsApp(
-    `Hola ${nombreBonito(nombre).split(' ')[0]}, ya puedes registrarte en Chambea para pedir y ofrecer cambios de turno: ${enlace}\n` +
-    'Entra, crea tu usuario y elige tu nombre del horario.')
+  const invitar = (nombre) => enlaceWhatsApp(msgInvitar(nombre, enlace))
 
   return (
     <div className="space-y-4">
@@ -124,7 +123,7 @@ function Panel({ irA }) {
             {verTodos ? 'Ver menos' : `Ver los ${faltan.length}`}
           </button>
         )}
-        <a href={enlaceWhatsApp(`Ya pueden registrarse en Chambea para pedir y ofrecer cambios de turno: ${enlace}`)} target="_blank" rel="noreferrer"
+        <a href={enlaceWhatsApp(msgInvitar('', enlace).replace('¡Hola! 👋 ¿Qué tal?', '¡Hola, equipo! 👋'))} target="_blank" rel="noreferrer"
           className="flex items-center justify-center gap-2 border-t border-slate-100 py-3 text-sm font-semibold text-emerald-700">
           <Icono n="whatsapp" size={18} />Invitar al grupo de WhatsApp
         </a>

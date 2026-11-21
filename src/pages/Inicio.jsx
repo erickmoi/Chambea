@@ -103,7 +103,7 @@ export default function Inicio({ cuenta, avisar, onAbrirSolicitud, onIr, recarga
         <div className="min-w-0 space-y-3">
           {!turnos && !error && <div className="esqueleto h-56" />}
           {turnos && (principal
-            ? <TurnoPrincipal t={principal} enCurso={!!actual} ahora={ahora} cuenta={cuenta} onClick={() => abrir(principal)} onDeTurno={() => setDeTurno(principal.fecha)} />
+            ? <TurnoPrincipal t={principal} enCurso={!!actual} ahora={ahora} cuenta={cuenta} onClick={() => abrir(principal)} />
             : (
               <div className="tarjeta py-8 text-center">
                 <Icono n="cama" size={44} className="mx-auto text-marca-texto" />
@@ -111,6 +111,13 @@ export default function Inicio({ cuenta, avisar, onAbrirSolicitud, onIr, recarga
                 <p className="mt-1 text-sm text-slate-600">Cuando se cargue el horario aparecerán aquí.</p>
               </div>
             ))}
+
+          {actual && proximo && proximo.fecha !== sumarDias(hoy(), 1) && (
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-slate-700">Tu próximo turno</p>
+              <TarjetaTurno t={proximo} conFecha conPausas publicado={!!publicados[proximo.id]} onClick={() => abrir(proximo)} />
+            </div>
+          )}
 
           {deHoy.length > 0 && (
             <div className="space-y-2">
@@ -151,7 +158,7 @@ export default function Inicio({ cuenta, avisar, onAbrirSolicitud, onIr, recarga
 }
 
 // ---------------------------------------------------------------- turno grande
-function TurnoPrincipal({ t, enCurso, ahora, cuenta, onClick, onDeTurno }) {
+function TurnoPrincipal({ t, enCurso, ahora, cuenta, onClick }) {
   const m = momento(t)
   const ini = new Date(t.inicio).getTime()
   const fin = new Date(t.fin).getTime()
@@ -205,15 +212,12 @@ function TurnoPrincipal({ t, enCurso, ahora, cuenta, onClick, onDeTurno }) {
         </p>
       )}
 
-      <div className="flex border-t border-slate-200">
-        <button onClick={onClick} className="flex flex-1 items-center justify-center gap-1.5 py-3 text-sm font-semibold text-marca-texto hover:bg-slate-50">
+      {/* Solo se puede cambiar con anticipación: si ya está en curso no se ofrece */}
+      {!enCurso && (
+        <button onClick={onClick} className="flex w-full items-center justify-center gap-1.5 border-t border-slate-200 py-3 text-sm font-semibold text-marca-texto hover:bg-slate-50">
           <Icono n="cambio" size={18} />Cambiar este turno
         </button>
-        <span className="w-px bg-slate-200" />
-        <button onClick={onDeTurno} className="flex flex-1 items-center justify-center gap-1.5 py-3 text-sm font-semibold text-marca-texto hover:bg-slate-50">
-          <Icono n="equipo" size={18} />Quién más está
-        </button>
-      </div>
+      )}
     </section>
   )
 }
