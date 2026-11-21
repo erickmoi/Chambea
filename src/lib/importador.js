@@ -1,6 +1,6 @@
 // =====================================================================
 // Importador de horarios (PLANILLA y SP TRIAGE) desde el .xlsx oficial.
-// Solo toma: nombre, fecha, horario y función (supervisor / referencias).
+// Toma: nombre, fecha, horario, función (supervisor / referencias) y las pausas (comida y descanso).
 // Funciona igual en el navegador y en Node (para pruebas).
 // =====================================================================
 import readExcelFile from 'read-excel-file/universal'
@@ -35,9 +35,29 @@ export function leerHorario(valor) {
   return { hi: h(m[1], m[2], m[3]), hf: h(m[4], m[5], m[6]) }
 }
 
-function armarTurno(nombre, fecha, horario, funcion, supervisor) {
+// '1:30 - 2:30 pm' → '13:30–14:30'. El AM/PM solo viene al final: se deduce el del inicio
+// (la pausa más corta que tenga sentido, máximo 5 horas).
+const RE_PAUSA = /(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})\s*(am|pm)/i
+export function leerPausa(valor) {
+  const m = RE_PAUSA.exec(texto(valor))
+  if (!m) return null
+  const fin = ((Number(m[3]) % 12) + (m[5].toLowerCase() === 'pm' ? 12 : 0)) * 60 + Number(m[4])
+  const base = (Number(m[1]) % 12) * 60 + Number(m[2])
+  let mejor = null
+  for (const ini of [base, base + 720]) {
+    const dur = (fin - ini + 1440) % 1440
+    if (dur > 0 && dur <= 300 && (mejor == null || dur < mejor.dur)) mejor = { ini, dur }
+  }
+  if (!mejor) return null
+  const hm = (min) => `${dos(Math.floor(min / 60) % 24)}:${dos(min % 60)}`
+  return `${hm(mejor.ini)}–${hm(fin)}`
+}
+
+function armarTurno(nombre, fecha, horario, funcion, supervisor, comida = null, descanso = null) {
   const fechaFin = horario.hf <= horario.hi ? sumarDia(fecha) : fecha
   return {
+    comida,
+    descanso,
     nombre: texto(nombre),
     fecha,
     inicio: `${fecha}T${horario.hi}:00${ZONA}`,
@@ -86,7 +106,8 @@ function leerPlanilla(data) {
       }
       const notas = `${texto(data[i + 1]?.[col])} ${texto(data[i + 2]?.[col])}`
       const funcion = supervisor ? 'supervisor' : RE_REFERENCIAS.test(notas) ? 'referencias' : 'triaje'
-      turnos.push(armarTurno(nombre, fecha, horario, funcion, supervisor))
+      turnos.push(armarTurno(nombre, fecha, horario, funcion, supervisor,
+        leerPausa(data[i + 1]?.[col]), leerPausa(data[i + 2]?.[col])))
     }
   }
   return { turnos, raros, dias: dias.map((d) => d.fecha) }
@@ -117,7 +138,8 @@ function leerSP(data) {
           continue
         }
         const notas = `${texto(data[r + 1]?.[col])} ${texto(data[r + 2]?.[col])}`
-        turnos.push(armarTurno(nombre, fecha, horario, RE_REFERENCIAS.test(notas) ? 'referencias' : 'general', false))
+        turnos.push(armarTurno(nombre, fecha, horario, RE_REFERENCIAS.test(notas) ? 'referencias' : 'general', false,
+          leerPausa(data[r + 1]?.[col]), leerPausa(data[r + 2]?.[col])))
       }
     }
   }

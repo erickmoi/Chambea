@@ -1,7 +1,7 @@
 // Detalle de una solicitud: lo que ve quien publicó, quien recibe una propuesta y quien se ofrece
 import { useCallback, useEffect, useState } from 'react'
 import Icono from './Icono'
-import { Hoja, Cargando } from './ui'
+import { Hoja, Cargando, confirmar, Exito } from './ui'
 import { TarjetaTurno, ListaAvisos, HojaAvisos, ChipSeccion } from './turnos'
 import { supabase } from '../lib/supabase'
 import { rpc, TIPO, ESTADO, FUNCION, textoTurno, nombreBonito, iniciales, enlaceWhatsApp, enlaceWaA, urlSolicitud } from '../lib/datos'
@@ -12,6 +12,7 @@ export default function Solicitud({ id, cuenta, avisar, onCerrar, onCambio }) {
   const [d, setD] = useState(null)
   const [error, setError] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [celebrar, setCelebrar] = useState(false)
   const [avisos, setAvisos] = useState(null) // { lista, reintentar }
   const [eligiendoTurno, setEligiendoTurno] = useState(false)
 
@@ -21,20 +22,21 @@ export default function Solicitud({ id, cuenta, avisar, onCerrar, onCambio }) {
   useEffect(() => { cargar() }, [cargar])
 
   // Ejecuta una acción; si la base devuelve avisos, pide confirmación y la repite con "confirmo"
-  const accion = async (fn, ok) => {
+  const accion = async (fn, ok, festejo = false) => {
     setEnviando(true)
     try {
       const r = await fn(false)
       if (r && r.ok === false && r.choques) {
         setAvisos({ lista: r.choques, reintentar: async () => {
           setEnviando(true)
-          try { await fn(true); setAvisos(null); vibrar(); avisar(ok); onCambio?.(); await cargar() }
+          try { await fn(true); setAvisos(null); vibrar(); festejo ? setCelebrar(true) : avisar(ok); onCambio?.(); await cargar() }
           catch (e) { avisar(e.message, 'error') } finally { setEnviando(false) }
         } })
         return
       }
       vibrar()
-      avisar(ok)
+      if (festejo) setCelebrar(true)
+      else avisar(ok)
       onCambio?.()
       await cargar()
     } catch (e) {
@@ -51,10 +53,11 @@ export default function Solicitud({ id, cuenta, avisar, onCerrar, onCambio }) {
   const miOferta = d.ofertas.find((o) => o.mia && ['pendiente', 'elegida'].includes(o.estado))
   const pendientes = d.ofertas.filter((o) => ['pendiente', 'elegida'].includes(o.estado))
   const abierta = d.estado === 'abierta'
-  const textoCompartir = `${tipo.texto} en Chambea (${d.seccion === 'sp' ? 'SP' : 'Planilla'}): ${d.turno ? textoTurno(d.turno) : d.fechas.map(fechaCorta).join(', ')}. ¿Te sirve? ${urlSolicitud(d.id)}`
+  const textoCompartir = `${tipo.texto} en Chambea (${d.seccion === 'sp' ? 'Servicios Profesionales' : 'Planilla'}): ${d.turno ? textoTurno(d.turno) : d.fechas.map(fechaCorta).join(', ')}. ¿Te sirve? ${urlSolicitud(d.id)}`
 
   return (
     <>
+      {celebrar && <Exito texto="¡Cambio hecho!" sub="Ya aparece en el horario de los dos." onFin={() => setCelebrar(false)} />}
       <Hoja titulo={d.directa ? 'Propuesta de cambio' : tipo.texto} icono={d.directa ? 'proponer' : tipo.icono} onCerrar={onCerrar}>
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -97,7 +100,7 @@ export default function Solicitud({ id, cuenta, avisar, onCerrar, onCambio }) {
                         {o.estado === 'elegida'
                           ? <span className="text-xs font-semibold text-marca-texto">Esperando que confirme</span>
                           : abierta && <button className="btn-primario px-3 py-2 text-sm" disabled={enviando}
-                              onClick={() => accion((c) => rpc('elegir_oferta', { p_oferta_id: o.id, p_confirmo_choque: c }), `Elegiste a ${nombreBonito(o.persona_completo).split(' ')[0]} ✅`)}>Elegir</button>}
+                              onClick={() => accion((c) => rpc('elegir_oferta', { p_oferta_id: o.id, p_confirmo_choque: c }), `Elegiste a ${nombreBonito(o.persona_completo).split(' ')[0]}`)}>Elegir</button>}
                       </div>
                       {o.nota && <p className="text-sm italic text-slate-600">“{o.nota}”</p>}
                       <ListaAvisos avisos={o.choques} className="text-xs" />
@@ -107,7 +110,7 @@ export default function Solicitud({ id, cuenta, avisar, onCerrar, onCambio }) {
               )}
               {['abierta', 'por_confirmar'].includes(d.estado) && (
                 <button className="btn-peligro w-full" disabled={enviando}
-                  onClick={() => confirm('¿Cancelar esta solicitud?') && accion(() => rpc('cancelar_solicitud', { p_id: d.id }), 'Solicitud cancelada')}>
+                  onClick={async () => (await confirmar({ titulo: 'Cancelar solicitud', texto: 'Se cierra y se avisa a quienes respondieron.', boton: 'Cancelar solicitud', cancelar: 'No', peligro: true })) && accion(() => rpc('cancelar_solicitud', { p_id: d.id }), 'Solicitud cancelada')}>
                   Cancelar solicitud
                 </button>
               )}
@@ -128,7 +131,7 @@ export default function Solicitud({ id, cuenta, avisar, onCerrar, onCambio }) {
                   {d.directa ? 'Rechazar' : 'Ya no puedo'}
                 </button>
                 <button className="btn-primario flex-1" disabled={enviando}
-                  onClick={() => accion((c) => rpc('responder_eleccion', { p_oferta_id: miOferta.id, p_acepta: true, p_confirmo_choque: c }), 'Cambio hecho 🔁 Recuerda tramitarlo con jefatura')}>
+                  onClick={() => accion((c) => rpc('responder_eleccion', { p_oferta_id: miOferta.id, p_acepta: true, p_confirmo_choque: c }), 'Cambio hecho', true)}>
                   {d.directa ? 'Aceptar cambio' : 'Confirmar'}
                 </button>
               </div>
@@ -150,7 +153,7 @@ export default function Solicitud({ id, cuenta, avisar, onCerrar, onCambio }) {
               </button>
             ) : (
               <button className="btn-primario w-full py-3" disabled={enviando}
-                onClick={() => accion((c) => rpc('ofertar', { p_solicitud_id: d.id, p_confirmo_choque: c }), 'Te ofreciste ✅')}>
+                onClick={() => accion((c) => rpc('ofertar', { p_solicitud_id: d.id, p_confirmo_choque: c }), 'Te ofreciste')}>
                 {d.tipo === 'ceder' ? 'Yo lo tomo' : 'Yo te cubro'}
               </button>
             )
@@ -173,13 +176,13 @@ export default function Solicitud({ id, cuenta, avisar, onCerrar, onCambio }) {
               <Icono n="whatsapp" size={20} />Compartir en el grupo
             </a>
           )}
-          {d.estado === 'aplicada' && <p className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700">Cambio hecho 🔁. Recuerden tramitarlo con jefatura.</p>}
+          {d.estado === 'aplicada' && <p className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700">Cambio hecho. Recuerden tramitarlo con jefatura.</p>}
         </div>
       </Hoja>
 
       {eligiendoTurno && (
         <ElegirMiTurno d={d} cuenta={cuenta} onCerrar={() => setEligiendoTurno(false)}
-          onElegir={(t) => { setEligiendoTurno(false); accion((c) => rpc('ofertar', { p_solicitud_id: d.id, p_turno_id: t.id, p_confirmo_choque: c }), 'Te ofreciste ✅') }} />
+          onElegir={(t) => { setEligiendoTurno(false); accion((c) => rpc('ofertar', { p_solicitud_id: d.id, p_turno_id: t.id, p_confirmo_choque: c }), 'Te ofreciste') }} />
       )}
       {avisos && <HojaAvisos avisos={avisos.lista} enviando={enviando} onCancelar={() => setAvisos(null)} onContinuar={avisos.reintentar} />}
     </>

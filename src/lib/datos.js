@@ -1,6 +1,6 @@
 // Lecturas y acciones contra Supabase, con caché local para ver el horario sin conexión.
 import { supabase, mensajeError } from './supabase'
-import { horario, fechaCorta } from './fechas'
+import { horario, fechaCorta, sumarDias } from './fechas'
 
 export async function rpc(nombre, args) {
   const { data, error } = await supabase.rpc(nombre, args)
@@ -16,7 +16,7 @@ const leerCache = () => {
 // Mis turnos en un rango. Si no hay internet, devuelve lo último guardado.
 export async function misTurnos(personaId, desde, hasta) {
   const { data, error } = await supabase.from('turnos')
-    .select('id, seccion, fecha, inicio, fin, etiqueta, funcion, es_cambio, persona_original_id')
+    .select('id, seccion, fecha, inicio, fin, etiqueta, funcion, es_cambio, persona_original_id, comida, descanso')
     .eq('persona_id', personaId).gte('fecha', desde).lte('fecha', hasta).order('inicio')
   if (error) {
     const c = leerCache()
@@ -33,16 +33,17 @@ export async function misTurnos(personaId, desde, hasta) {
   return { turnos: data, sinConexion: false }
 }
 
-export const SECCION = { planilla: 'Planilla', sp: 'SP' }
+export const SECCION = { planilla: 'Planilla', sp: 'Servicios Profesionales' }
+export const SECCION_CORTA = { planilla: 'P', sp: 'SP' }
 export const FUNCION = { triaje: 'Triaje', referencias: 'Referencias', supervisor: 'Supervisor', general: 'General' }
 export const TIPO = {
   permuta: { texto: 'Permuta', icono: 'cambio', color: 'bg-planilla-claro text-planilla' },
-  ceder: { texto: 'Cede turno', icono: 'ceder', color: 'bg-amber-50 text-amber-800' },
+  ceder: { texto: 'Donación', icono: 'ceder', color: 'bg-amber-50 text-amber-800' },
   cobertura: { texto: 'Pide cobertura', icono: 'cobertura', color: 'bg-red-50 text-red-700' },
   busco: { texto: 'Busca turno', icono: 'buscar', color: 'bg-sp-claro text-sp' },
 }
 export const ESTADO = {
-  abierta: 'Abierta', por_confirmar: 'Por confirmar', aplicada: 'Cambio hecho 🔁', cancelada: 'Cancelada', vencida: 'Vencida',
+  abierta: 'Abierta', por_confirmar: 'Por confirmar', aplicada: 'Cambio hecho', cancelada: 'Cancelada', vencida: 'Vencida',
   pendiente: 'Esperando respuesta', elegida: 'Te eligieron', aceptada: 'Aceptada', rechazada: 'No elegida', retirada: 'Retirada',
 }
 
@@ -70,15 +71,17 @@ export function exportarIcs(turnos, nombre) {
   const ev = turnos.map((t) => [
     'BEGIN:VEVENT', `UID:chambea-${t.id}@chambea`, `DTSTAMP:${icsFecha(Date.now())}`,
     `DTSTART:${icsFecha(t.inicio)}`, `DTEND:${icsFecha(t.fin)}`,
-    `SUMMARY:${t.seccion === 'sp' ? 'SP' : 'Planilla'} ${horario(t.etiqueta)}${t.es_cambio ? ' 🔁' : ''}`,
-    `DESCRIPTION:${FUNCION[t.funcion]}`, 'END:VEVENT'].join('\r\n'))
+    // Solo los de Servicios Profesionales llevan "SP" antes de la hora; planilla va solo con la hora
+    `SUMMARY:${t.seccion === 'sp' ? 'SP ' : ''}${horario(t.etiqueta)}${t.es_cambio ? ' (cambio)' : ''}`,
+    `DESCRIPTION:${[SECCION[t.seccion], FUNCION[t.funcion], t.comida && `Comida ${horario(t.comida)}`, t.descanso && `Descanso ${horario(t.descanso)}`].filter(Boolean).join(' · ')}`,
+    'END:VEVENT'].join('\r\n'))
   descargar(`${nombre}.ics`, ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Chambea//ES', ...ev, 'END:VCALENDAR'].join('\r\n'), 'text/calendar')
 }
 export function exportarCsv(turnos, nombre) {
-  const filas = [['Fecha', 'Sección', 'Horario', 'Función', 'Horas', 'Cambio']]
+  const filas = [['Fecha', 'Sección', 'Horario', 'Función', 'Horas', 'Comida', 'Descanso', 'Cambio']]
   for (const t of turnos) {
     filas.push([t.fecha, SECCION[t.seccion], horario(t.etiqueta), FUNCION[t.funcion],
-      Math.round((new Date(t.fin) - new Date(t.inicio)) / 36e5), t.es_cambio ? 'Sí' : ''])
+      Math.round((new Date(t.fin) - new Date(t.inicio)) / 36e5), t.comida || '', t.descanso || '', t.es_cambio ? 'Sí' : ''])
   }
   descargar(`${nombre}.csv`, '﻿' + filas.map((f) => f.join(',')).join('\n'), 'text/csv;charset=utf-8')
 }
@@ -100,3 +103,35 @@ export const enlaceWaA = (tel, texto) => `https://wa.me/503${tel}?text=${encodeU
 export const telValido = (t) => /^[67]\d{7}$/.test(String(t || '').replace(/\D/g, '').replace(/^503(?=\d{8}$)/, ''))
 export const limpiarTel = (t) => String(t || '').replace(/\D/g, '').replace(/^503(?=\d{8}$)/, '')
 export const telBonito = (t) => (t ? `${t.slice(0, 4)}-${t.slice(4)}` : '')
+
+// ---------------------------------------------------------------- quién está de turno
+// Todos los turnos que tocan ese día (incluye las noches que vienen del día anterior)
+export async function turnosDelDia(fecha) {
+  const { data, error } = await supabase.from('turnos')
+    .select('id, persona_id, seccion, fecha, inicio, fin, etiqueta, funcion, es_cambio, persona:personas(nombre)')
+    .gte('fecha', sumarDias(fecha, -1)).lte('fecha', fecha)
+    .lt('inicio', `${sumarDias(fecha, 1)}T00:00:00-06:00`).gt('fin', `${fecha}T00:00:00-06:00`)
+    .order('inicio')
+  if (error) throw new Error(mensajeError(error))
+  return data
+}
+
+// ---------------------------------------------------------------- ¿me sirve este turno?
+// Compara un turno de Permutas con mis turnos: 'sirve' · 'choca' · 'pegado'
+export function evaluarTurno(t, mios, minDescansoH = 8) {
+  if (!t) return null
+  const ini = new Date(t.inicio).getTime()
+  const fin = new Date(t.fin).getTime()
+  let pegado = null
+  for (const m of mios) {
+    if (m.id === t.id) return null // es mío
+    const mi = new Date(m.inicio).getTime()
+    const mf = new Date(m.fin).getTime()
+    if (mi < fin && mf > ini) return { estado: 'choca', con: m }
+    if (t.seccion === 'planilla' && m.seccion === 'planilla') {
+      const hueco = Math.min(Math.abs(mi - fin), Math.abs(ini - mf)) / 36e5
+      if (hueco < minDescansoH) pegado = m
+    }
+  }
+  return pegado ? { estado: 'pegado', con: pegado } : { estado: 'sirve' }
+}

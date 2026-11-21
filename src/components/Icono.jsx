@@ -50,13 +50,33 @@ import I_recargar from '@phosphor-icons/core/duotone/arrow-clockwise-duotone.svg
 import I_ceder from '@phosphor-icons/core/duotone/gift-duotone.svg?raw'
 import I_cobertura from '@phosphor-icons/core/duotone/lifebuoy-duotone.svg?raw'
 import I_celular from '@phosphor-icons/core/duotone/device-mobile-duotone.svg?raw'
+import I_auriculares from '@phosphor-icons/core/duotone/headset-duotone.svg?raw'
+import I_comida from '@phosphor-icons/core/duotone/fork-knife-duotone.svg?raw'
+import I_cafe from '@phosphor-icons/core/duotone/coffee-duotone.svg?raw'
+import I_reloj from '@phosphor-icons/core/duotone/clock-duotone.svg?raw'
+import I_equipo from '@phosphor-icons/core/duotone/users-three-duotone.svg?raw'
+import I_grafica from '@phosphor-icons/core/duotone/chart-bar-duotone.svg?raw'
+import I_alarma from '@phosphor-icons/core/duotone/alarm-duotone.svg?raw'
+import I_huella from '@phosphor-icons/core/duotone/fingerprint-duotone.svg?raw'
+import I_letra from '@phosphor-icons/core/duotone/text-aa-duotone.svg?raw'
+import I_vibrar from '@phosphor-icons/core/duotone/vibrate-duotone.svg?raw'
+import I_cama from '@phosphor-icons/core/duotone/bed-duotone.svg?raw'
+import I_repetir from '@phosphor-icons/core/duotone/repeat-duotone.svg?raw'
+import I_calendarioOk from '@phosphor-icons/core/duotone/calendar-check-duotone.svg?raw'
+import I_cuentaAtras from '@phosphor-icons/core/duotone/clock-countdown-duotone.svg?raw'
+import I_bandeja from '@phosphor-icons/core/duotone/tray-duotone.svg?raw'
+import I_cohete from '@phosphor-icons/core/duotone/rocket-duotone.svg?raw'
+import I_campanaSuena from '@phosphor-icons/core/duotone/bell-ringing-duotone.svg?raw'
+import I_tarde from '@phosphor-icons/core/duotone/sun-horizon-duotone.svg?raw'
+import I_manana from '@phosphor-icons/core/duotone/cloud-sun-duotone.svg?raw'
 
 const UI = {
   cerrar: X, subir: UploadSimple, excel: FileXls, ok: CheckCircle, alerta: Warning,
   usuarios: Users, calendario: CalendarBlank, cambio: ArrowsLeftRight, enlace: Link, info: Info,
   ver: Eye, ocultar: EyeSlash, salir: SignOut, llave: Key, inicio: House, admin: Gear, cuenta: UserCircle,
   espera: Hourglass, check: Check,
-  lista: I_lista, semana: I_semana, mes: I_mes, anterior: I_anterior, siguiente: I_siguiente, whatsapp: I_whatsapp, descargar: I_descargar, mas: I_mas, sol: I_sol, luna: I_luna, pc: I_pc, novedades: I_novedades, proponer: I_proponer, hola: I_hola, cancelar: I_cancelar, buscar: I_buscar, trato: I_trato, historial: I_historial, filtro: I_filtro, compartir: I_compartir, sinRed: I_sinRed, recargar: I_recargar, ceder: I_ceder, cobertura: I_cobertura, celular: I_celular, dado: DiceFive, seguridad: ShieldCheck, notificaciones: Bell, prohibido: Prohibit,
+  lista: I_lista, semana: I_semana, mes: I_mes, anterior: I_anterior, siguiente: I_siguiente, whatsapp: I_whatsapp, descargar: I_descargar, mas: I_mas, sol: I_sol, luna: I_luna, pc: I_pc, novedades: I_novedades, proponer: I_proponer, hola: I_hola, cancelar: I_cancelar, buscar: I_buscar, trato: I_trato, historial: I_historial, filtro: I_filtro, compartir: I_compartir, sinRed: I_sinRed, recargar: I_recargar, ceder: I_ceder, cobertura: I_cobertura, celular: I_celular, dado: DiceFive, seguridad: ShieldCheck, notificaciones: Bell, prohibido: Prohibit, tarde: I_tarde, manana: I_manana,
+  auriculares: I_auriculares, comida: I_comida, cafe: I_cafe, reloj: I_reloj, equipo: I_equipo, grafica: I_grafica, alarma: I_alarma, huella: I_huella, letra: I_letra, vibrar: I_vibrar, cama: I_cama, repetir: I_repetir, calendarioOk: I_calendarioOk, cuentaAtras: I_cuentaAtras, bandeja: I_bandeja, cohete: I_cohete, campanaSuena: I_campanaSuena,
 }
 const OTROS_PESOS = { bold: { cerrar: XBold } }
 

@@ -6,7 +6,7 @@ import { useAuth, esSuperadmin } from '../../lib/auth'
 import { invocar, pinAleatorio } from '../../lib/funciones'
 import { enlaceWaA, telBonito } from '../../lib/datos'
 import Icono from '../../components/Icono'
-import { Aviso, Cargando, Hoja, Vacio } from '../../components/ui'
+import { Aviso, Cargando, Hoja, Vacio, confirmar } from '../../components/ui'
 
 const ROLES = { superadmin: 'Superadmin', admin: 'Admin', usuario: 'Compañero' }
 
@@ -35,9 +35,9 @@ export default function Usuarios() {
   const inactivos = lista.filter((u) => !u.activo)
 
   return (
-    <div className="mx-auto max-w-2xl space-y-5 p-4">
+    <div className="space-y-5">
       <Aviso aviso={aviso} onCerrar={cerrarAviso} />
-      <h1 className="flex items-center gap-2 text-xl font-bold text-slate-900"><Icono n="usuarios" size={26} className="text-marca-texto" />Usuarios</h1>
+      <h2 className="sr-only">Usuarios</h2>
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Sin enlazar ({pendientes.length})</h2>
@@ -105,11 +105,11 @@ function TarjetaPendiente({ u, libres, avisar, alListo }) {
     const { error } = await supabase.rpc('aprobar_usuario', { p_perfil: u.id, p_persona: persona })
     setEnviando(false)
     if (error) return avisar(mensajeError(error), 'error')
-    avisar(`${u.nombre.split(' ')[0]} enlazado ✅`)
+    avisar(`${u.nombre.split(' ')[0]} enlazado`)
     alListo()
   }
   const rechazar = async () => {
-    if (!confirm(`¿Rechazar la cuenta de ${u.nombre}? Quedará desactivada.`)) return
+    if (!(await confirmar({ titulo: 'Rechazar cuenta', texto: `La cuenta de ${u.nombre} quedará desactivada.`, boton: 'Rechazar', peligro: true }))) return
     setEnviando(true)
     const { error } = await supabase.rpc('cambiar_estado_usuario', { p_perfil: u.id, p_activo: false })
     setEnviando(false)
@@ -163,12 +163,12 @@ function DetalleUsuario({ u, yo, libres, avisar, onCerrar, alListo }) {
     if (error) throw error
   }
 
-  const reenlazar = () => ejecutar(() => rpc('aprobar_usuario', { p_perfil: u.id, p_persona: persona }), 'Enlace actualizado ✅')
+  const reenlazar = () => ejecutar(() => rpc('aprobar_usuario', { p_perfil: u.id, p_persona: persona }), 'Enlace actualizado')
   const estado = () => ejecutar(() => rpc('cambiar_estado_usuario', { p_perfil: u.id, p_activo: !u.activo }),
-    u.activo ? 'Cuenta desactivada' : 'Cuenta activada ✅')
-  const rol = () => ejecutar(() => rpc('asignar_rol', { p_perfil: u.id, p_rol: u.rol === 'admin' ? 'usuario' : 'admin' }), 'Rol actualizado ✅')
+    u.activo ? 'Cuenta desactivada' : 'Cuenta activada')
+  const rol = () => ejecutar(() => rpc('asignar_rol', { p_perfil: u.id, p_rol: u.rol === 'admin' ? 'usuario' : 'admin' }), 'Rol actualizado')
   const restablecer = async () => {
-    if (!confirm(`¿Cambiar el PIN de ${u.nombre} a ${pin}?`)) return
+    if (!(await confirmar({ titulo: 'Cambiar PIN', texto: `El PIN de ${u.nombre} será ${pin}.`, boton: 'Cambiar PIN' }))) return
     setEnviando(true)
     try {
       await invocar('admin-usuarios', { accion: 'restablecer_pin', usuario_id: u.id, pin })

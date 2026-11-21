@@ -15,6 +15,9 @@
   --color-marca-claro: color-mix(in oklab, var(--color-marca) 12%, white);
   --color-marca-oscuro: color-mix(in oklab, var(--color-marca) 70%, black);
   --color-superficie: #ffffff;
+  /* Grises de texto con más contraste que los de Tailwind */
+  --color-slate-400: #7a889d;
+  --color-slate-500: #5b6a80;
 }
 
 /* ---------- Modo oscuro: se invierte la escala de grises ---------- */
@@ -25,8 +28,8 @@
   --color-slate-100: #1b2436;
   --color-slate-200: #2a3549;
   --color-slate-300: #3d4a61;
-  --color-slate-400: #64748b;
-  --color-slate-500: #94a3b8;
+  --color-slate-400: #8593a9;
+  --color-slate-500: #a8b4c5;
   --color-slate-600: #b8c4d4;
   --color-slate-700: #d5dde8;
   --color-slate-800: #e8edf4;
@@ -170,7 +173,11 @@ body {
   animation: trazo 0.4s 0.15s ease-out forwards;
 }
 
-/* Quien pidió reducir movimiento en su celular no ve animaciones */
+/* Sin animaciones: si el celular lo pide o si se apagó en Ajustes */
+html.sin-animaciones *, html.sin-animaciones *::before, html.sin-animaciones *::after {
+  animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important; transition-duration: 0.01ms !important;
+}
+html.sin-animaciones .confeti { display: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -180,3 +187,44 @@ body {
   }
   .confeti { display: none; }
 }
+
+/* ---------- Boleto de turno: talón con muescas ---------- */
+:root { --fondo-boleto: var(--color-slate-50); }
+.hoja-fondo { --fondo-boleto: var(--color-superficie); }
+.boleto {
+  position: relative;
+  border-radius: 1rem;
+  background: var(--color-superficie);
+  box-shadow: 0 0 0 1px var(--color-slate-200);
+  overflow: hidden;
+}
+.boleto-talon { position: relative; border-right: 2px dashed color-mix(in oklab, currentColor 35%, transparent); }
+.boleto-talon::before, .boleto-talon::after {
+  content: '';
+  position: absolute;
+  right: -8px;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--fondo-boleto);
+  box-shadow: inset 0 0 0 1px var(--color-slate-200);
+}
+.boleto-talon::before { top: -8px; }
+.boleto-talon::after { bottom: -8px; }
+
+/* ---------- Accesibilidad ---------- */
+/* Letra grande (Ajustes → Accesibilidad) */
+html.letra-grande { font-size: 112.5%; }
+/* Contorno visible al navegar con teclado */
+:focus-visible { outline: 3px solid color-mix(in oklab, var(--color-marca) 70%, white); outline-offset: 2px; border-radius: 0.6rem; }
+
+@utility boton-icono {
+  @apply inline-flex min-h-11 min-w-11 items-center justify-center rounded-full transition hover:bg-slate-100 active:scale-90;
+}
+@utility btn-peligro-solido {
+  @apply btn bg-red-700 text-white shadow-sm;
+}
+
+/* Turnos cortos (tarde 3–11 PM, 6–10 PM, 7–11 PM · mañana 7 AM–3 PM): rayado suave y borde punteado */
+.talon-corto { background-image: repeating-linear-gradient(135deg, transparent 0 7px, color-mix(in oklab, currentColor 12%, transparent) 7px 9px); }
+.turno-corto { background-image: repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in oklab, currentColor 14%, transparent) 5px 7px); outline: 1.5px dashed color-mix(in oklab, currentColor 55%, transparent); outline-offset: -1.5px; }

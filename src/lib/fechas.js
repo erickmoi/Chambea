@@ -44,16 +44,49 @@ export const fechaCorta = (iso) => `${diaCorto(iso)} ${numDia(iso)} ${mesCorto(i
 export const fechaNumerica = (iso) => `${numDia(iso)}/${Number(iso.slice(5, 7))}`
 export const tituloMes = (iso) => `${mesLargo(iso)} ${iso.slice(0, 4)}`
 
-// '07:00–19:00' → '7A–7P' · '18:00–06:00' → '6P–6A' · '07:30–15:00' → '7:30A–3P'
-function horaCorta(hhmm) {
+// '07:00–19:00' → '7 AM – 7 PM' · '18:00–06:00' → '6 PM – 6 AM' · '07:30–15:00' → '7:30 AM – 3 PM'
+const partes = (hhmm) => {
   const [h, m] = hhmm.split(':').map(Number)
-  const sufijo = h < 12 ? 'A' : 'P'
-  const h12 = h % 12 === 0 ? 12 : h % 12
-  return `${h12}${m ? `:${dos(m)}` : ''}${sufijo}`
+  return { num: `${h % 12 === 0 ? 12 : h % 12}${m ? `:${dos(m)}` : ''}`, sufijo: h < 12 ? 'AM' : 'PM' }
 }
-export const horario = (etiqueta = '') => etiqueta.split(/[–-]/).map((x) => horaCorta(x.trim())).join('–')
+// Formato de hora elegido en Ajustes: 12 h (7 AM) o 24 h (07:00)
+let formato24 = (() => { try { return localStorage.getItem('chambea.hora24') === '1' } catch { return false } })()
+export const usar24h = (si) => { formato24 = si; try { localStorage.setItem('chambea.hora24', si ? '1' : '0') } catch { /* nada */ } }
+export const es24h = () => formato24
+export const hora = (hhmm) => { if (formato24) return hhmm; const p = partes(hhmm); return `${p.num} ${p.sufijo}` }
+export const horario = (etiqueta = '') => etiqueta.split(/[–-]/).map((x) => hora(x.trim())).join(' – ')
+// Pausas: '13:30–14:30' → '1:30 – 2:30 PM' (el AM/PM una sola vez si es el mismo)
+export function pausa(etiqueta) {
+  if (!etiqueta) return ''
+  if (formato24) return etiqueta.replace(/[–-]/, ' – ')
+  const [a, b] = etiqueta.split(/[–-]/).map((x) => partes(x.trim()))
+  return a.sufijo === b.sufijo ? `${a.num} – ${b.num} ${b.sufijo}` : `${a.num} ${a.sufijo} – ${b.num} ${b.sufijo}`
+}
 export const horas = (t) => Math.round((new Date(t.fin) - new Date(t.inicio)) / 36e5)
-export const esNoche = (t) => Number(t.etiqueta.slice(0, 2)) >= 15
+// Tipo de turno según horario:
+//  · 'dia'    turnos largos de día (6 AM – 6 PM, 7 AM – 7 PM)
+//  · 'noche'  turnos largos de noche (6 PM – 6 AM, 7 PM – 7 AM)
+//  · 'tarde'  turnos cortos que empiezan después del mediodía (3 – 11 PM, 6 – 10 PM, 7 – 11 PM)
+//  · 'manana' turnos cortos que empiezan en la mañana (7 AM – 3 PM)
+export function tipoTurno(t) {
+  const h = Number(t.etiqueta.slice(0, 2))
+  const largo = (new Date(t.fin) - new Date(t.inicio)) / 36e5 >= 11
+  if (largo) return h >= 5 && h < 12 ? 'dia' : 'noche'
+  return h >= 12 || h < 4 ? 'tarde' : 'manana'
+}
+export const esNoche = (t) => tipoTurno(t) === 'noche'
+export const esCorto = (t) => ['tarde', 'manana'].includes(tipoTurno(t))
+
+// "en 2 días 5 h" · "en 3 h 20 min" · "en 12 min"
+export function faltan(ms) {
+  const min = Math.max(0, Math.round(ms / 60000))
+  const d = Math.floor(min / 1440)
+  const h = Math.floor((min % 1440) / 60)
+  const m = min % 60
+  if (d) return `${d} ${d === 1 ? 'día' : 'días'}${h ? ` ${h} h` : ''}`
+  if (h) return `${h} h${m ? ` ${m} min` : ''}`
+  return `${m} min`
+}
 
 export function haceCuanto(ts) {
   const min = Math.round((Date.now() - new Date(ts)) / 60000)

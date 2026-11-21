@@ -1,6 +1,6 @@
 // Service worker: hace la app instalable, abre rápido y muestra notificaciones.
 // Solo guarda los archivos de la app; los datos (Supabase) siempre van a la red.
-const CACHE = 'chambea-v1'
+const CACHE = 'chambea-v2'
 
 self.addEventListener('install', () => self.skipWaiting())
 
@@ -54,8 +54,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(d.title || 'Chambea', {
       body: d.body || '',
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
+      icon: '/icons/icono-192.png',
+      badge: '/icons/icono-192.png',
       tag: d.tag,
       renotify: !!d.tag,
       data: { url: d.url || '/' },

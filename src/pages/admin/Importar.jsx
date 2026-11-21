@@ -105,7 +105,7 @@ export default function Importar() {
       setHistorial((n) => n + 1)
       setSecciones([])
       setArchivo(null)
-      setAviso({ tipo: 'ok', texto: 'Horario cargado ✅' })
+      setAviso({ tipo: 'ok', texto: 'Horario cargado' })
     } catch (e) {
       if (res.length) setResultados(res)
       setAviso({ tipo: 'error', texto: mensajeError(e) })
@@ -115,13 +115,11 @@ export default function Importar() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-4">
+    <div className="space-y-4">
       <Aviso aviso={aviso} onCerrar={cerrarAviso} />
       <header>
-        <h1 className="flex items-center gap-2 text-xl font-bold text-slate-900">
-          <Icono n="excel" size={26} className="text-marca-texto" /> Cargar horario
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h2 className="sr-only">Cargar horario</h2>
+        <p className="text-sm text-slate-600">
           Descarga la hoja oficial como .xlsx (Archivo → Descargar → Microsoft Excel) y súbela aquí.
           Solo se reemplazan las fechas y la sección que elijas.
         </p>
@@ -221,7 +219,7 @@ function TarjetaSeccion({ s, onIncluir, onRango, onConservar }) {
           <label className="flex items-start gap-3 text-sm text-slate-700">
             <input type="checkbox" className="mt-0.5 h-5 w-5 accent-[var(--color-marca)]" checked={s.conservar} onChange={(e) => onConservar(e.target.checked)} />
             <span>
-              <b>Conservar los {s.cambios} cambio(s) 🔁</b> hechos en la app en estas fechas.
+              <b>Conservar los {s.cambios} cambio(s)</b> hechos en la app en estas fechas.
               <span className="block text-slate-500">Desmárcalo si la hoja nueva ya trae esos cambios o si se anularon.</span>
             </span>
           </label>
@@ -265,10 +263,11 @@ function Resultados({ lista }) {
           <p className="font-semibold">{NOMBRE_SECCION[r.seccion]} · {fechaCorta(r.desde)} al {fechaCorta(r.hasta)}</p>
           <ul className="mt-1 list-disc pl-6">
             <li>{r.insertados} turnos cargados ({r.reemplazados} reemplazados)</li>
-            {r.omitidos > 0 && <li>{r.omitidos} omitidos (ya estaban como cambio 🔁 o repetidos)</li>}
+            {r.omitidos > 0 && <li>{r.omitidos} omitidos (ya estaban como cambio o repetidos)</li>}
             {r.personas_nuevas?.length > 0 && <li>{r.personas_nuevas.length} persona(s) nueva(s)</li>}
             {r.enlazados_por_parecido?.length > 0 && <li>{r.enlazados_por_parecido.length} nombre(s) enlazados por parecido</li>}
             {r.solicitudes_canceladas > 0 && <li>{r.solicitudes_canceladas} solicitud(es) canceladas porque su turno cambió</li>}
+            {r.personas_avisadas > 0 && <li>Avisamos a {r.personas_avisadas} persona(s) que su horario cambió</li>}
           </ul>
         </div>
       ))}
