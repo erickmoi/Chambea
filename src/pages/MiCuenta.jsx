@@ -6,7 +6,7 @@ import { rpc, telValido, limpiarTel, telBonito } from '../lib/datos'
 import { pushSoportado, necesitaInstalar, estadoPush, activarPush, desactivarPush, probarPush } from '../lib/push'
 import {
   aplicarModo, modoGuardado, aplicarLetra, letraGuardada, vibracionActiva, guardarVibracion, vibrar, ACENTOS, acentoGuardado, aplicarAcento,
-  animacionesGuardadas, aplicarAnimaciones, pantallaInicial, guardarPantallaInicial, pausasVisibles, guardarPausasVisibles,
+  animacionesGuardadas, aplicarAnimaciones, pantallaInicial, guardarPantallaInicial, pausasVisibles, guardarPausasVisibles, detalleMes, guardarDetalleMes,
 } from '../lib/tema'
 import { es24h, usar24h } from '../lib/fechas'
 import { LOGOS, aplicarLogo } from '../lib/logo'
@@ -16,6 +16,7 @@ import CampoClave, { claveValida } from '../components/CampoClave'
 import Icono from '../components/Icono'
 import { Aviso, Interruptor } from '../components/ui'
 import { Segmentado } from '../components/turnos'
+import ActivarAvisos, { useEstadoAvisos } from '../components/ActivarAvisos'
 
 const ROLES = { superadmin: 'Superadministrador', admin: 'Administración', usuario: 'Compañero' }
 
@@ -153,6 +154,7 @@ function MiHorario() {
   const [pantalla, setPantalla] = useState(pantallaInicial)
   const [h24, setH24] = useState(es24h)
   const [pausas, setPausas] = useState(pausasVisibles)
+  const [mes, setMes] = useState(detalleMes)
   const [vista, setVista] = useState(() => { try { return localStorage.getItem('chambea.vista') || 'agenda' } catch { return 'agenda' } })
   return (
     <section className="tarjeta space-y-4">
@@ -167,6 +169,12 @@ function MiHorario() {
         <span className="etiqueta">Vista del horario</span>
         <Segmentado etiqueta="Vista del horario" valor={vista} onCambio={(v) => { setVista(v); try { localStorage.setItem('chambea.vista', v) } catch { /* nada */ } }} opciones={[
           { id: 'agenda', texto: 'Agenda' }, { id: 'semana', texto: 'Semana' }, { id: 'mes', texto: 'Mes' },
+        ]} />
+      </div>
+      <div>
+        <span className="etiqueta">En la vista Mes, mostrar</span>
+        <Segmentado etiqueta="Detalle del mes" valor={mes} onCambio={(v) => { setMes(v); guardarDetalleMes(v) }} opciones={[
+          { id: 'letra', texto: 'Solo P / SP' }, { id: 'hora', texto: 'P / SP + hora (7–7)' },
         ]} />
       </div>
       <div>
@@ -186,6 +194,7 @@ function AvisosPersonales({ cuenta, recargar, avisar }) {
     recordar_marcaje: cuenta.recordar_marcaje !== false,
     marcaje_min: cuenta.marcaje_min || 15,
     avisar_bolsa: cuenta.avisar_bolsa !== false,
+    avisar_pausas: cuenta.avisar_pausas !== false,
   })
   const cambiar = async (campo, valor) => {
     const antes = p
@@ -206,6 +215,9 @@ function AvisosPersonales({ cuenta, recargar, avisar }) {
             opciones={[5, 10, 15, 20, 30].map((m) => ({ id: String(m), texto: `${m}` }))} />
         </div>
       )}
+      <Interruptor activo={p.avisar_pausas} onCambio={(v) => cambiar('avisar_pausas', v)}
+        etiqueta={<span className="flex items-center gap-2"><Icono n="comida" size={18} className="text-marca-texto" />Al empezar mi turno</span>}
+        ayuda="Te recordamos tu hora de almuerzo o cena y de descanso." />
       <Interruptor activo={p.avisar_bolsa} onCambio={(v) => cambiar('avisar_bolsa', v)}
         etiqueta="Nuevas permutas y donaciones" ayuda="Cuando un compañero publica un turno que puedes tomar. Las propuestas para ti siempre te llegan." />
     </section>
@@ -237,37 +249,23 @@ function WhatsApp({ cuenta, recargar, avisar }) {
 }
 
 function Notificaciones({ avisar }) {
-  const [estado, setEstado] = useState('cargando')
+  const [estado] = useEstadoAvisos()
   const [ocupado, setOcupado] = useState(false)
-  useEffect(() => { estadoPush().then(setEstado) }, [])
-  if (!pushSoportado()) return null
-  const activar = async () => {
-    setOcupado(true)
-    try { await activarPush(); setEstado('activo'); await probarPush().catch(() => {}); avisar('Avisos activados') }
-    catch (e) { avisar(e.message, 'error') } finally { setOcupado(false) }
-  }
+  if (!pushSoportado() && !necesitaInstalar()) return null
   const apagar = async () => {
     setOcupado(true)
-    try { await desactivarPush(); setEstado('inactivo'); avisar('Avisos desactivados en este dispositivo') }
+    try { await desactivarPush(); avisar('Avisos desactivados en este dispositivo'); window.location.reload() }
     finally { setOcupado(false) }
   }
   return (
-    <section className="tarjeta space-y-2">
+    <section className="tarjeta space-y-3">
       <h3 className="flex items-center gap-2 font-bold text-slate-900"><Icono n="notificaciones" size={20} />Avisos en el celular</h3>
-      {necesitaInstalar() ? (
-        <p className="text-sm text-slate-600">En iPhone, primero instala la app (abajo) y ábrela desde la pantalla de inicio.</p>
-      ) : estado === 'bloqueado' ? (
-        <p className="text-sm text-slate-600">Los bloqueaste en este navegador. Actívalos desde los ajustes del navegador para este sitio.</p>
-      ) : estado === 'activo' ? (
+      <ActivarAvisos compacto={estado === 'activo'} avisar={avisar} />
+      {estado === 'activo' && (
         <div className="flex gap-2">
           <button className="btn-secundario flex-1" disabled={ocupado} onClick={() => probarPush().then(() => avisar('Prueba enviada'), (e) => avisar(e.message, 'error'))}>Probar</button>
           <button className="btn-peligro flex-1" disabled={ocupado} onClick={apagar}>Desactivar</button>
         </div>
-      ) : (
-        <>
-          <p className="text-sm text-slate-600">Te avisamos al instante cuando te propongan un cambio o respondan tu solicitud.</p>
-          <button className="btn-primario w-full" disabled={ocupado || estado === 'cargando'} onClick={activar}>Activar avisos</button>
-        </>
       )}
     </section>
   )

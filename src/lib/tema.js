@@ -63,6 +63,8 @@ export function aplicarAnimaciones(si = true) {
 // Pantalla al abrir la app y si se ven las pausas en las tarjetas del horario
 export const pantallaInicial = () => leer('chambea.pantalla', 'inicio')
 export const guardarPantallaInicial = (v) => guardar('chambea.pantalla', v)
+export const detalleMes = () => leer('chambea.mes', 'letra') // 'letra' (P/SP) o 'hora' (P/SP + 7–7)
+export const guardarDetalleMes = (v) => guardar('chambea.mes', v)
 export const pausasVisibles = () => leer('chambea.pausas', '1') === '1'
 export const guardarPausasVisibles = (si) => guardar('chambea.pausas', si ? '1' : '0')
 

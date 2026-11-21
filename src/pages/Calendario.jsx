@@ -4,12 +4,12 @@ import Icono from '../components/Icono'
 import { Cargando, Hoja } from '../components/ui'
 import { TarjetaTurno, Segmentado, momento, letraSeccion } from '../components/turnos'
 import DeTurno from '../components/DeTurno'
-import { pausasVisibles, guardarPausasVisibles } from '../lib/tema'
+import { pausasVisibles, guardarPausasVisibles, detalleMes, guardarDetalleMes } from '../lib/tema'
 import { HojaTurno, BuscarCambio, PublicarTurno, CorregirTurno } from '../components/AccionesTurno'
 import { misTurnos, rpc, exportarIcs, exportarCsv } from '../lib/datos'
 import {
   hoy, sumarDias, inicioSemana, inicioMes, finMes, sumarMeses, rangoDias,
-  diaCorto, numDia, mesCorto, mesLargo, tituloMes, horario, horas, fechaCorta, tipoTurno, hora,
+  diaCorto, numDia, mesCorto, mesLargo, tituloMes, horario, horas, fechaCorta, tipoTurno, hora, horaCorta,
 } from '../lib/fechas'
 
 const VISTAS = [
@@ -33,6 +33,7 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
   const [exportar, setExportar] = useState(false)
   const [deTurno, setDeTurno] = useState(null)
   const [pausas, setPausas] = useState(pausasVisibles)
+  const [detalle, setDetalle] = useState(detalleMes)
   const refResumen = useRef(null)
 
   useEffect(() => guardar('chambea.vista', vista), [vista])
@@ -121,6 +122,11 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
         <Segmentado compacto etiqueta="Mostrar" valor={filtro} onCambio={setFiltro} opciones={[
           { id: 'todo', texto: 'Todo' }, { id: 'planilla', texto: 'P', etiqueta: 'Planilla' }, { id: 'sp', texto: 'SP', etiqueta: 'Servicios Profesionales' },
         ]} />
+        {vista === 'mes' && (
+          <Segmentado compacto etiqueta="Detalle del mes" valor={detalle} className="ml-auto"
+            onCambio={(v) => { setDetalle(v); guardarDetalleMes(v) }}
+            opciones={[{ id: 'letra', texto: 'P/SP' }, { id: 'hora', texto: '+ hora', etiqueta: 'Mostrar también la hora' }]} />
+        )}
         {vista === 'agenda' && (
           <button onClick={() => { setPausas(!pausas); guardarPausasVisibles(!pausas) }} aria-pressed={pausas}
             className={`ml-auto flex min-h-8 items-center gap-1 rounded-xl px-2.5 text-xs font-semibold transition ${pausas ? 'bg-marca-claro text-marca-texto' : 'bg-slate-100 text-slate-600'}`}>
@@ -145,7 +151,7 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
         <div key={vista + desde} className="animar-entrada">
           {vista === 'agenda' && <Agenda semana={semana} porDia={porDia} publicados={publicados} onTurno={abrir} onDeTurno={setDeTurno} pausas={pausas} />}
           {vista === 'semana' && <Semana semana={semana} porDia={porDia} onTurno={abrir} />}
-          {vista === 'mes' && <Mes cursor={cursor} porDia={porDia} dia={diaMes} onDia={setDiaMes} publicados={publicados} onTurno={abrir} onDeTurno={setDeTurno} />}
+          {vista === 'mes' && <Mes cursor={cursor} porDia={porDia} dia={diaMes} onDia={setDiaMes} publicados={publicados} onTurno={abrir} onDeTurno={setDeTurno} conHora={detalle === 'hora'} />}
         </div>
       )}
 
@@ -288,7 +294,7 @@ function Semana({ semana, porDia, onTurno }) {
 }
 
 // ---------------------------------------------------------------- Mes (cada turno: ícono día/noche + P/S)
-function Mes({ cursor, porDia, dia, onDia, publicados, onTurno, onDeTurno }) {
+function Mes({ cursor, porDia, dia, onDia, publicados, onTurno, onDeTurno, conHora }) {
   const ini = inicioSemana(inicioMes(cursor))
   const fin = sumarDias(inicioSemana(finMes(cursor)), 6)
   const dias = rangoDias(ini, fin)
@@ -312,8 +318,9 @@ function Mes({ cursor, porDia, dia, onDia, publicados, onTurno, onDeTurno }) {
                 {lista.slice(0, 2).map((t) => {
                   const m = momento(t)
                   return (
-                    <span key={t.id} className={`flex w-full items-center justify-center gap-0.5 rounded-md py-px text-[10px] font-bold ${elegido ? 'bg-white/20' : t.seccion === 'sp' ? 'bg-sp-claro text-sp' : 'bg-planilla-claro text-planilla'} ${m.corto ? 'turno-corto' : ''}`}>
-                      <Icono n={m.icono} size={11} />{letraSeccion(t.seccion)}
+                    <span key={t.id} className={`flex w-full flex-col items-center rounded-md py-px text-[10px] font-bold leading-tight ${elegido ? 'bg-white/20' : t.seccion === 'sp' ? 'bg-sp-claro text-sp' : 'bg-planilla-claro text-planilla'} ${m.corto ? 'turno-corto' : ''}`}>
+                      <span className="flex items-center gap-0.5"><Icono n={m.icono} size={11} />{letraSeccion(t.seccion)}</span>
+                      {conHora && <span className="mono text-[9px] font-semibold tracking-tighter">{horaCorta(t.etiqueta)}</span>}
                     </span>
                   )
                 })}

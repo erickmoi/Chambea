@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import Icono from './Icono'
 import { Hoja } from './ui'
+import ActivarAvisos from './ActivarAvisos'
 
 const PASOS = [
   {
@@ -33,6 +34,12 @@ const PASOS = [
       ['whatsapp', 'Escríbele por WhatsApp a quien te propone un cambio.'],
     ],
   },
+  {
+    icono: 'notificaciones',
+    titulo: 'Activa los avisos',
+    texto: 'Sin avisos no te llega el recordatorio de GeoVictoria ni tus horas de almuerzo, cena y descanso.',
+    avisos: true,
+  },
 ]
 
 const CLAVE = 'chambea.recorrido'
@@ -50,8 +57,9 @@ export default function Recorrido({ onCerrar }) {
         </div>
         <h3 className="text-center text-xl font-bold text-slate-900">{p.titulo}</h3>
         <p className="mt-2 text-center text-slate-700">{p.texto}</p>
+        {p.avisos && <div className="mt-4 text-left"><ActivarAvisos /></div>}
         <ul className="mt-4 space-y-2">
-          {p.puntos.map(([ic, t]) => (
+          {(p.puntos || []).map(([ic, t]) => (
             <li key={t} className="flex items-start gap-3 rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-800">
               <Icono n={ic} size={20} className="mt-px text-marca-texto" />{t}
             </li>
@@ -66,7 +74,7 @@ export default function Recorrido({ onCerrar }) {
           : <button className="btn-secundario flex-1" onClick={fin}>Saltar</button>}
         {i < PASOS.length - 1
           ? <button data-autofoco className="btn-primario flex-1" onClick={() => setI(i + 1)}>Siguiente</button>
-          : <button data-autofoco className="btn-primario flex-1" onClick={fin}>¡Empezar!</button>}
+          : <button className="btn-primario flex-1" onClick={fin}>¡Empezar!</button>}
       </div>
     </Hoja>
   )

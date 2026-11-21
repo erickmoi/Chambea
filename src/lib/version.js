@@ -1,7 +1,16 @@
 // Versión visible en Ajustes y notas de "Novedades" (se muestran una vez por versión)
-export const VERSION = '0.6.3'
+export const VERSION = '0.6.4'
 
 export const NOVEDADES = [
+  {
+    version: '0.6.4',
+    titulo: 'Avisos al empezar tu turno',
+    puntos: [
+      'Al empezar tu turno te avisamos tu hora de almuerzo o cena y de descanso.',
+      'Te guiamos para activar los avisos (en iPhone, primero agrega la app a la pantalla de inicio).',
+      'Vista Mes: elige ver solo P / SP o también la hora corta (7–7, 7–3, 3–11).',
+    ],
+  },
   {
     version: '0.6.3',
     titulo: 'Detalles',

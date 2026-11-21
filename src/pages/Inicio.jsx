@@ -6,6 +6,8 @@ import { Cargando } from '../components/ui'
 import { ChipSeccion, ChipFuncion, Pausas, momento, TarjetaTurno } from '../components/turnos'
 import { HojaTurno, BuscarCambio, PublicarTurno, CorregirTurno } from '../components/AccionesTurno'
 import DeTurno from '../components/DeTurno'
+import ActivarAvisos, { useEstadoAvisos } from '../components/ActivarAvisos'
+import { Hoja } from '../components/ui'
 import { misTurnos, rpc, textoTurno, TIPO, nombreBonito } from '../lib/datos'
 import { supabase } from '../lib/supabase'
 import { hoy, sumarDias, fechaCorta, diaLargo, numDia, mesLargo, horario, faltan, hora, pausa, nombreComida } from '../lib/fechas'
@@ -26,6 +28,15 @@ export default function Inicio({ cuenta, avisar, onAbrirSolicitud, onIr, recarga
   const [publicados, setPublicados] = useState({})
   const [deTurno, setDeTurno] = useState(null) // fecha
   const [anuncio, setAnuncio] = useState(null)
+  const [estadoAvisos] = useEstadoAvisos()
+  const [verAvisos, setVerAvisos] = useState(false)
+  const [avisosCerrado, setAvisosCerrado] = useState(() => {
+    try { return Number(localStorage.getItem('chambea.avisos.cerrado') || 0) > Date.now() } catch { return false }
+  })
+  const cerrarAvisos = () => {
+    try { localStorage.setItem('chambea.avisos.cerrado', String(Date.now() + 3 * 864e5)) } catch { /* nada */ }
+    setAvisosCerrado(true)
+  }
 
   const cargar = useCallback(async () => {
     setError('')
@@ -86,6 +97,19 @@ export default function Inicio({ cuenta, avisar, onAbrirSolicitud, onIr, recarga
         <p role="note" className="mb-4 flex items-start gap-2 rounded-2xl bg-amber-50 p-3 text-sm text-amber-800 ring-1 ring-amber-200">
           <Icono n="campanaSuena" size={20} className="mt-px shrink-0" /><span><b>Aviso de la administración:</b> {anuncio}</span>
         </p>
+      )}
+      {['inactivo', 'bloqueado'].includes(estadoAvisos) && !avisosCerrado && (
+        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-marca-claro p-3 ring-1 ring-marca/30">
+          <Icono n="notificaciones" size={26} className="shrink-0 text-marca-texto" />
+          <p className="min-w-0 flex-1 text-sm text-slate-800"><b>Activa los avisos</b> para el recordatorio de GeoVictoria y tus horas de comida y descanso.</p>
+          <button className="btn-primario shrink-0 px-3 py-2 text-sm" onClick={() => setVerAvisos(true)}>Activar</button>
+          <button className="boton-icono h-8 min-h-8 w-8 min-w-8 text-slate-500" aria-label="Recordármelo después" onClick={cerrarAvisos}><Icono n="cerrar" size={16} /></button>
+        </div>
+      )}
+      {verAvisos && (
+        <Hoja titulo="Activa los avisos" icono="notificaciones" onCerrar={() => setVerAvisos(false)}>
+          <ActivarAvisos avisar={avisar} onListo={() => setVerAvisos(false)} />
+        </Hoja>
       )}
       {sinConexion && (
         <p className="mb-4 flex items-center gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">

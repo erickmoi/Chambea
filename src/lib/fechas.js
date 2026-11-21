@@ -75,10 +75,18 @@ export function tipoTurno(t) {
   return h >= 12 || h < 4 ? 'tarde' : 'manana'
 }
 export const esNoche = (t) => tipoTurno(t) === 'noche'
+// Hora corta para el mes: '07:00–19:00' → '7–7' · '15:00–23:00' → '3–11' · '07:30–15:00' → '7:30–3'
+export function horaCorta(etiqueta = '') {
+  return etiqueta.split(/[–-]/).map((x) => {
+    const [h, m] = x.trim().split(':').map(Number)
+    const n = formato24 ? h : (h % 12 === 0 ? 12 : h % 12)
+    return m ? `${n}:${String(m).padStart(2, '0')}` : `${n}`
+  }).join('–')
+}
 // En la noche la comida se llama cena (si empieza de 5 PM en adelante o de madrugada)
 export const nombreComida = (t) => {
   const h = Number((t?.comida || '').slice(0, 2))
-  return t?.comida && (h >= 17 || h < 5) ? 'Cena' : 'Comida'
+  return t?.comida && (h >= 17 || h < 5) ? 'Cena' : 'Almuerzo'
 }
 export const esCorto = (t) => ['tarde', 'manana'].includes(tipoTurno(t))
 
