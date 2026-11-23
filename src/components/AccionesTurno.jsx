@@ -136,7 +136,7 @@ export function BuscarCambio({ t, onCerrar, avisar, onListo }) {
           )}
           {res.descartadas > 0 && (
             <p className="text-center text-xs text-slate-500">
-              {res.descartadas} opción(es) ocultas porque a alguno de los dos le quedarían turnos cruzados, de planilla sin 12 h de descanso o más de 24 h seguidas.
+              {res.descartadas} opción(es) ocultas porque a alguno de los dos le quedarían turnos cruzados, de día después de una noche, de planilla muy juntos o más de 24 h seguidas.
             </p>
           )}
         </div>

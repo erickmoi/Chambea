@@ -1,0 +1,4 @@
+-- 021 · Al publicar una permuta, las fechas que aceptas deben ser posibles para ti
+-- (aplicada desde el panel; ver private.fechas_invalidas y public.publicar_solicitud en la base)
+-- Mismo contenido que la migración aplicada: fechas_invalidas(persona, turno, fechas) usa private.avisos
+-- desplazando el turno a cada fecha; publicar_solicitud rechaza la publicación si alguna fecha no es posible.

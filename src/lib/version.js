@@ -6,9 +6,10 @@ export const NOVEDADES = [
     version: '0.6.8',
     titulo: 'Permutas más claras',
     puntos: [
-      'Ya no aparecen turnos del mismo día que quieres cambiar.',
-      'Planilla: 12 h de descanso entre turnos; días seguidos de día o de noche siempre se permiten.',
-      'Antes de aplicar un cambio revisamos de nuevo las reglas de las dos personas.',
+      'Ya no aparecen turnos del mismo día ni opciones que dejen choques a alguno de los dos.',
+      'Después de una noche no se trabaja ese mismo día (planilla ni SP).',
+      'Planilla: un turno por día y 12 h de descanso. SP: puedes juntar turnos, salvo dos de 12 h seguidos.',
+      'Al publicar, las fechas que aceptas también se revisan, y antes de aplicar un cambio revisamos a las dos personas.',
       'Buscar con quién cambiar ahora muestra todo el mes de una vez.',
       'Desliza con el dedo: en Horario cambias de semana o mes, y en Permutas de sección.',
     ],

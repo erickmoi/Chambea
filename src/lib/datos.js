@@ -52,7 +52,9 @@ export const textoTurno = (t) => (t ? `${t.seccion === 'sp' ? 'SP · ' : ''}${fe
 // Explica un aviso de choque en palabras
 export function textoAviso(a) {
   if (a.tipo === 'cruce') return `Choca con ${a.seccion === 'sp' ? 'un SP' : 'un turno de planilla'} del ${fechaCorta(a.fecha)} (${horario(a.etiqueta)})`
-  if (a.tipo === 'pegado') return `Queda sin 12 h de descanso con un turno de planilla del ${fechaCorta(a.fecha)} (${horario(a.etiqueta)})`
+  if (a.tipo === 'pegado') return `Muy junto a un turno de planilla del ${fechaCorta(a.fecha)} (${horario(a.etiqueta)}): en planilla, un turno por día y 12 h de descanso`
+  if (a.tipo === 'postnoche') return `Queda de día después de la noche del ${fechaCorta(a.fecha)} (${horario(a.etiqueta)})`
+  if (a.tipo === 'pegado_sp') return `Dos SP de 12 h seguidos (${fechaCorta(a.fecha)}, ${horario(a.etiqueta)})`
   if (a.tipo === 'jornada_larga') return `Serían ${Math.round(a.horas)} h de trabajo seguidas`
   return 'Aviso'
 }
