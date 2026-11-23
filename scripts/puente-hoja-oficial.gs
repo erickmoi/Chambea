@@ -47,7 +47,7 @@ function esHojaDeHorario(hoja) {
   const cols = Math.min(10, hoja.getLastColumn());
   if (filas < 1 || cols < 1) return false;
   const cabecera = hoja.getRange(1, 1, filas, cols).getDisplayValues().flat().join('|').toUpperCase();
-  return /MEDICO \/ FECHA/.test(cabecera) || (/NOMBRE/.test(cabecera) && /AREA/.test(cabecera));
+  return /MEDICO \/ FECHA/.test(cabecera) || (/NOMBRE/.test(cabecera) && (/AREA/.test(cabecera) || /GRUPOS/.test(cabecera)));
 }
 
 // Valores de la hoja; las fechas viajan como 'D:AAAA-MM-DD' y se quitan las celdas vacías del final

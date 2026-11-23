@@ -83,23 +83,31 @@ function columnasDeFechas(fila: any[], desdeCol: number) {
 }
 
 // ---------------------------------------------------------------- PLANILLA
-// Bloques de 3 filas: turno · nota 1 · nota 2. Nombre en B y AREA en C.
+// Formato completo: bloques de 3 filas (turno · nota 1 · nota 2), nombre en B y AREA en C.
+// Formato simple (hoja de incidencias): GRUPOS | NOMBRE | fechas…, una fila por persona y sin notas.
 function leerPlanilla(data: any[][]) {
-  const filaFechas = data.findIndex((f) => columnasDeFechas(f, 3).length >= 7)
+  const filaFechas = data.findIndex((f) => columnasDeFechas(f, 2).length >= 7)
   if (filaFechas < 0) throw new Error('No encontré la fila de fechas en la hoja de planilla.')
-  const dias = columnasDeFechas(data[filaFechas], 3)
+  const dias = columnasDeFechas(data[filaFechas], 2)
+  const simple = dias[0].col === 2
   const turnos: any[] = []
   const raros: any[] = []
   for (let i = filaFechas + 1; i < data.length; i++) {
     const f = data[i]
     const nombre = texto(f[1])
-    const area = normalizar(f[2])
-    if (!nombre || !area || leerHorario(area)) continue
+    if (!nombre || leerHorario(nombre)) continue
+    const area = simple ? 'TRIAJE' : normalizar(f[2])
+    if (!area || leerHorario(area)) continue
     const supervisor = area === 'SUPERVISOR'
     for (const { col, fecha } of dias) {
       const horario = leerHorario(f[col])
       if (!horario) {
         if (!RE_SIN_TURNO.test(texto(f[col]))) raros.push({ nombre, fecha, valor: texto(f[col]) })
+        continue
+      }
+      if (simple) {
+        // Sin notas: la función (supervisor) la decide la base según la persona
+        turnos.push(armarTurno(nombre, fecha, horario, 'triaje', false))
         continue
       }
       const notas = `${texto(data[i + 1]?.[col])} ${texto(data[i + 2]?.[col])}`
@@ -152,6 +160,7 @@ function tipoDeHoja(nombreHoja: string, data: any[][]) {
   const cabecera = data.slice(0, 6).map((f) => f.map(normalizar).join('|')).join('|')
   if (/MEDICO \/ FECHA/.test(cabecera)) return 'sp'
   if (/NOMBRE/.test(cabecera) && /AREA/.test(cabecera)) return 'planilla'
+  if (/GRUPOS/.test(cabecera) && /NOMBRE/.test(cabecera)) return 'planilla' // hoja de incidencias
   return null
 }
 
