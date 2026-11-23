@@ -23,7 +23,7 @@ declare
   v_pausas integer := 0; v_iguales integer := 0; v_avisados integer := 0; v_nuevas text[]; v_existentes integer;
 begin
   if p_seccion not in ('planilla', 'sp') then raise exception 'Sección no válida.'; end if;
-  drop table if exists _f, _par, _bajas, _altas;
+  drop table if exists _f, _par, _bajas, _altas, _pausas;
 
   create temp table _f on commit drop as
   select trim(regexp_replace(f ->> 'nombre', '\s+', ' ', 'g')) as nombre,
@@ -71,31 +71,35 @@ begin
   select count(*) into v_iguales from _par
    where coalesce(comida, '') = coalesce(comida_antes, '') and coalesce(descanso, '') = coalesce(descanso_antes, '');
 
-  -- 1) Pausas que cambiaron
-  for v_x in
+  -- 1) Pausas que cambiaron (un solo aviso por persona, con sus fechas)
+  create temp table _pausas (persona_id bigint, fecha date, inicio timestamptz, comida text, descanso text) on commit drop;
+  with upd as (
     update public.turnos t set comida = p.comida, descanso = p.descanso,
            funcion = case when t.es_cambio then t.funcion else p.funcion end
       from _par p
      where t.id = p.turno_id
        and (coalesce(p.comida, '') <> coalesce(p.comida_antes, '') or coalesce(p.descanso, '') <> coalesce(p.descanso_antes, ''))
-    returning t.persona_id, t.fecha, t.inicio, t.comida, t.descanso
+    returning t.persona_id, t.fecha, t.inicio, t.comida, t.descanso)
+  insert into _pausas select * from upd;
+  select count(*) into v_pausas from _pausas;
+  for v_x in
+    select persona_id, count(*) as n, min(fecha) as primera,
+           string_agg(to_char(fecha, 'DD/MM'), ', ' order by fecha) as fechas,
+           (array_agg(comida order by fecha))[1] as comida, (array_agg(descanso order by fecha))[1] as descanso
+      from _pausas where inicio > now() group by persona_id
   loop
-    v_pausas := v_pausas + 1;
-    if v_x.inicio > now() then
-      perform private.notificar_persona(v_x.persona_id, 'pausas_cambiadas',
-        'Cambió tu ' || case when v_x.comida is not null
-                              and (split_part(v_x.comida, ':', 1)::int >= 17 or split_part(v_x.comida, ':', 1)::int < 5)
-                             then 'cena' else 'almuerzo' end || ' o descanso del ' || to_char(v_x.fecha, 'DD/MM'),
-        concat_ws(' · ',
-          case when v_x.comida is not null then
-            case when split_part(v_x.comida, ':', 1)::int >= 17 or split_part(v_x.comida, ':', 1)::int < 5
-                 then 'Cena ' else 'Almuerzo ' end || private.texto_horario(v_x.comida) end,
-          case when v_x.descanso is not null then 'Descanso ' || private.texto_horario(v_x.descanso) end),
-        '/?vista=horario');
-    end if;
+    perform private.notificar_persona(v_x.persona_id, 'pausas_cambiadas',
+      case when v_x.n = 1 then 'Cambió tu almuerzo/cena o descanso del ' || to_char(v_x.primera, 'DD/MM')
+           else 'Cambiaron tus pausas en ' || v_x.n || ' turnos' end,
+      case when v_x.n = 1 then concat_ws(' · ',
+             case when v_x.comida is not null then
+               case when split_part(v_x.comida, ':', 1)::int >= 17 or split_part(v_x.comida, ':', 1)::int < 5
+                    then 'Cena ' else 'Almuerzo ' end || private.texto_horario(v_x.comida) end,
+             case when v_x.descanso is not null then 'Descanso ' || private.texto_horario(v_x.descanso) end)
+           else 'Fechas: ' || v_x.fechas || '. Revísalas en tu horario.' end,
+      '/?vista=horario');
   end loop;
 
-  -- 2) Turnos que ya no están en la hoja (no se tocan los que vienen de una permuta)
   create temp table _bajas on commit drop as
   select t.id, t.persona_id, t.fecha, t.etiqueta from public.turnos t
    where t.seccion = p_seccion and t.fecha between v_desde_cambios and p_hasta and not t.es_cambio

@@ -101,7 +101,7 @@ export default function Inicio({ cuenta, avisar, onAbrirSolicitud, onIr, recarga
       {['inactivo', 'bloqueado'].includes(estadoAvisos) && !avisosCerrado && (
         <div className="mb-4 flex items-center gap-3 rounded-2xl bg-marca-claro p-3 ring-1 ring-marca/30">
           <Icono n="notificaciones" size={26} className="shrink-0 text-marca-texto" />
-          <p className="min-w-0 flex-1 text-sm text-slate-800"><b>Activa los avisos</b> para el recordatorio de GeoVictoria y tus horas de comida y descanso.</p>
+          <p className="min-w-0 flex-1 text-sm text-slate-800"><b>Activa los avisos</b> para recordarte marcar entrada y salida, y tus horas de almuerzo o cena y descanso.</p>
           <button className="btn-primario shrink-0 px-3 py-2 text-sm" onClick={() => setVerAvisos(true)}>Activar</button>
           <button className="boton-icono h-8 min-h-8 w-8 min-w-8 text-slate-500" aria-label="Recordármelo después" onClick={cerrarAvisos}><Icono n="cerrar" size={16} /></button>
         </div>
@@ -188,7 +188,7 @@ function TurnoPrincipal({ t, enCurso, ahora, cuenta, onClick }) {
   const fin = new Date(t.fin).getTime()
   const avance = enCurso ? Math.min(100, Math.max(0, ((ahora - ini) / (fin - ini)) * 100)) : 0
   const sp = t.seccion === 'sp'
-  const geo = t.seccion === 'planilla' && !enCurso && ini - ahora < 24 * 36e5
+  const geo = !enCurso && ini - ahora < 24 * 36e5
   const cuando = t.fecha === hoy() ? 'Hoy' : t.fecha === sumarDias(hoy(), 1) ? 'Mañana' : fechaCorta(t.fecha)
 
   return (
@@ -232,7 +232,7 @@ function TurnoPrincipal({ t, enCurso, ahora, cuenta, onClick }) {
       {geo && cuenta.recordar_marcaje !== false && (
         <p className="mx-4 mb-3 flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700">
           <Icono n="huella" size={18} className="text-marca-texto" />
-          Marca en GeoVictoria · te avisamos a las <b className="mono">{hora(new Date(ini - 15 * 60000).toLocaleTimeString('en-GB', { timeZone: 'America/El_Salvador', hour: '2-digit', minute: '2-digit' }))}</b>
+          {t.seccion === 'sp' ? 'Firma la hoja de asistencia' : 'Marca en GeoVictoria'} · te avisamos a las <b className="mono">{hora(new Date(ini - (cuenta.marcaje_min || 15) * 60000).toLocaleTimeString('en-GB', { timeZone: 'America/El_Salvador', hour: '2-digit', minute: '2-digit' }))}</b>
         </p>
       )}
 

@@ -43,7 +43,7 @@ export function Vacio({ children }) {
 const pila = []
 const ENFOCABLES = 'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
 
-export function Hoja({ titulo, icono, onCerrar, children, ancho = 'max-w-lg' }) {
+export function Hoja({ titulo, icono, onCerrar, children, ancho = 'max-w-lg', encima = false }) {
   const caja = useRef(null)
   const cerrarRef = useRef(onCerrar)
   cerrarRef.current = onCerrar
@@ -78,7 +78,7 @@ export function Hoja({ titulo, icono, onCerrar, children, ancho = 'max-w-lg' }) 
   }, [])
 
   return (
-    <div className="animar-fondo fixed inset-0 z-40 flex items-end justify-center bg-black/50 sm:items-center" onClick={onCerrar}>
+    <div className={`animar-fondo fixed inset-0 ${encima ? 'z-[55]' : 'z-40'} flex items-end justify-center bg-black/50 sm:items-center`} onClick={onCerrar}>
       <div
         ref={caja}
         role="dialog"
@@ -119,7 +119,7 @@ export function RaizConfirmar() {
   if (!c) return null
   const fin = (si) => { c.resolver(si); setC(null) }
   return (
-    <Hoja titulo={c.titulo || '¿Seguro?'} icono={c.icono || (c.peligro ? 'alerta' : 'info')} onCerrar={() => fin(false)} ancho="max-w-sm">
+    <Hoja titulo={c.titulo || '¿Seguro?'} icono={c.icono || (c.peligro ? 'alerta' : 'info')} onCerrar={() => fin(false)} ancho="max-w-sm" encima>
       {c.texto && <p className="text-slate-700">{c.texto}</p>}
       <div className="mt-5 flex gap-2">
         <button className="btn-secundario flex-1" onClick={() => fin(false)}>{c.cancelar || 'Volver'}</button>

@@ -16,7 +16,7 @@ import CampoClave, { claveValida } from '../components/CampoClave'
 import Icono from '../components/Icono'
 import { Aviso, Interruptor } from '../components/ui'
 import { Segmentado } from '../components/turnos'
-import ActivarAvisos, { useEstadoAvisos } from '../components/ActivarAvisos'
+import ActivarAvisos, { useEstadoAvisos, avisarEstado } from '../components/ActivarAvisos'
 
 const ROLES = { superadmin: 'Superadministrador', admin: 'Administración', usuario: 'Compañero' }
 
@@ -195,6 +195,7 @@ function AvisosPersonales({ cuenta, recargar, avisar }) {
     marcaje_min: cuenta.marcaje_min || 15,
     avisar_bolsa: cuenta.avisar_bolsa !== false,
     avisar_pausas: cuenta.avisar_pausas !== false,
+    recordar_salida: cuenta.recordar_salida !== false,
   })
   const cambiar = async (campo, valor) => {
     const antes = p
@@ -206,8 +207,8 @@ function AvisosPersonales({ cuenta, recargar, avisar }) {
     <section className="tarjeta space-y-4">
       <h3 className="flex items-center gap-2 font-bold text-slate-900"><Icono n="campanaSuena" size={20} />Qué me avisan</h3>
       <Interruptor activo={p.recordar_marcaje} onCambio={(v) => cambiar('recordar_marcaje', v)}
-        etiqueta={<span className="flex items-center gap-2"><Icono n="huella" size={18} className="text-marca-texto" />Marcar en GeoVictoria</span>}
-        ayuda="Antes de cada turno de planilla." />
+        etiqueta={<span className="flex items-center gap-2"><Icono n="huella" size={18} className="text-marca-texto" />Recordatorio de entrada</span>}
+        ayuda="Planilla: marcar en GeoVictoria. Servicios Profesionales: firmar la hoja de asistencia." />
       {p.recordar_marcaje && (
         <div>
           <span className="etiqueta">¿Cuántos minutos antes?</span>
@@ -215,6 +216,9 @@ function AvisosPersonales({ cuenta, recargar, avisar }) {
             opciones={[5, 10, 15, 20, 30].map((m) => ({ id: String(m), texto: `${m}` }))} />
         </div>
       )}
+      <Interruptor activo={p.recordar_salida} onCambio={(v) => cambiar('recordar_salida', v)}
+        etiqueta={<span className="flex items-center gap-2"><Icono n="salir" size={18} className="text-marca-texto" />Marcar salida (planilla)</span>}
+        ayuda="A la hora en que termina tu turno de planilla." />
       <Interruptor activo={p.avisar_pausas} onCambio={(v) => cambiar('avisar_pausas', v)}
         etiqueta={<span className="flex items-center gap-2"><Icono n="comida" size={18} className="text-marca-texto" />Al empezar mi turno</span>}
         ayuda="Te recordamos tu hora de almuerzo o cena y de descanso." />
@@ -254,7 +258,7 @@ function Notificaciones({ avisar }) {
   if (!pushSoportado() && !necesitaInstalar()) return null
   const apagar = async () => {
     setOcupado(true)
-    try { await desactivarPush(); avisar('Avisos desactivados en este dispositivo'); window.location.reload() }
+    try { await desactivarPush(); avisarEstado('inactivo'); avisar('Avisos desactivados en este dispositivo') }
     finally { setOcupado(false) }
   }
   return (

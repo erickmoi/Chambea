@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Icono from './Icono'
 import { Hoja } from './ui'
-import ActivarAvisos from './ActivarAvisos'
+import ActivarAvisos, { useEstadoAvisos } from './ActivarAvisos'
 
 const PASOS = [
   {
@@ -10,7 +10,7 @@ const PASOS = [
     titulo: 'Tu horario, siempre a mano',
     texto: 'En Inicio ves tu turno de hoy o el próximo, con la hora de comida y de descanso. En Horario lo ves por agenda, semana o mes.',
     puntos: [
-      ['sol', 'Turno de día'], ['luna', 'Turno de noche'], ['huella', 'Te recordamos marcar en GeoVictoria antes de cada turno de planilla'],
+      ['sol', 'Turno de día'], ['luna', 'Turno de noche'], ['huella', 'Te recordamos marcar en GeoVictoria (planilla) o firmar la hoja de asistencia (Servicios Profesionales)'],
       ['calendario', 'P: Planilla · SP: Servicios Profesionales'],
     ],
   },
@@ -47,7 +47,10 @@ export const recorridoVisto = () => { try { return localStorage.getItem(CLAVE) =
 
 export default function Recorrido({ onCerrar }) {
   const [i, setI] = useState(0)
-  const p = PASOS[i]
+  const [estado] = useEstadoAvisos()
+  const [activoAqui, setActivoAqui] = useState(false)
+  const pasos = estado === 'activo' && !activoAqui ? PASOS.filter((x) => !x.avisos) : PASOS
+  const p = pasos[Math.min(i, pasos.length - 1)]
   const fin = () => { try { localStorage.setItem(CLAVE, '1') } catch { /* nada */ } onCerrar() }
   return (
     <Hoja titulo="Bienvenido a Chambea" icono="hola" onCerrar={fin} ancho="max-w-md">
@@ -57,7 +60,7 @@ export default function Recorrido({ onCerrar }) {
         </div>
         <h3 className="text-center text-xl font-bold text-slate-900">{p.titulo}</h3>
         <p className="mt-2 text-center text-slate-700">{p.texto}</p>
-        {p.avisos && <div className="mt-4 text-left"><ActivarAvisos /></div>}
+        {p.avisos && <div className="mt-4 text-left"><ActivarAvisos onListo={() => setActivoAqui(true)} /></div>}
         <ul className="mt-4 space-y-2">
           {(p.puntos || []).map(([ic, t]) => (
             <li key={t} className="flex items-start gap-3 rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-800">
@@ -66,13 +69,13 @@ export default function Recorrido({ onCerrar }) {
           ))}
         </ul>
       </div>
-      <div className="mt-5 flex items-center justify-center gap-1.5" aria-label={`Paso ${i + 1} de ${PASOS.length}`}>
-        {PASOS.map((_, k) => <span key={k} className={`h-2 rounded-full transition-all ${k === i ? 'w-6 bg-marca' : 'w-2 bg-slate-300'}`} />)}
+      <div className="mt-5 flex items-center justify-center gap-1.5" aria-label={`Paso ${i + 1} de ${pasos.length}`}>
+        {pasos.map((_, k) => <span key={k} className={`h-2 rounded-full transition-all ${k === i ? 'w-6 bg-marca' : 'w-2 bg-slate-300'}`} />)}
       </div>
       <div className="mt-4 flex gap-2">
         {i > 0 ? <button className="btn-secundario flex-1" onClick={() => setI(i - 1)}>Atrás</button>
           : <button className="btn-secundario flex-1" onClick={fin}>Saltar</button>}
-        {i < PASOS.length - 1
+        {i < pasos.length - 1
           ? <button data-autofoco className="btn-primario flex-1" onClick={() => setI(i + 1)}>Siguiente</button>
           : <button className="btn-primario flex-1" onClick={fin}>¡Empezar!</button>}
       </div>

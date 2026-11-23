@@ -1,7 +1,17 @@
 // Versión visible en Ajustes y notas de "Novedades" (se muestran una vez por versión)
-export const VERSION = '0.6.5'
+export const VERSION = '0.6.6'
 
 export const NOVEDADES = [
+  {
+    version: '0.6.6',
+    titulo: 'Avisos de entrada y salida',
+    puntos: [
+      'Planilla: te recordamos marcar la entrada y también la salida en GeoVictoria.',
+      'Servicios Profesionales: te recordamos firmar la hoja de asistencia al entrar.',
+      '“¿Quién está de turno?” más compacto y sin las noches del día anterior después de las 5 AM.',
+      'Arreglos: la confirmación ya no queda detrás de otras ventanas y la barra inferior ya no se mueve.',
+    ],
+  },
   {
     version: '0.6.5',
     titulo: 'Horario siempre al día',
@@ -84,9 +94,21 @@ export const NOVEDADES = [
 ]
 
 const CLAVE = 'chambea.version.vista'
-export function hayNovedades() {
-  try { return localStorage.getItem(CLAVE) !== VERSION } catch { return false }
+const leerVista = () => { try { return localStorage.getItem(CLAVE) } catch { return null } }
+// '0.6.10' > '0.6.9'
+const mayor = (a, b) => {
+  const x = a.split('.').map(Number), y = (b || '0').split('.').map(Number)
+  for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0)
+  return false
 }
+// Solo las versiones que esta persona todavía no ha visto
+export const novedadesPendientes = () => {
+  const vista = leerVista()
+  return vista ? NOVEDADES.filter((n) => mayor(n.version, vista)) : []
+}
+export const hayNovedades = () => novedadesPendientes().length > 0
+// La primera vez (cuenta nueva o celular nuevo) no se muestra el historial: solo se marca como visto
+export const primeraVez = () => leerVista() == null
 export function marcarNovedadesVistas() {
   try { localStorage.setItem(CLAVE, VERSION) } catch { /* sin almacenamiento */ }
 }

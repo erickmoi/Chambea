@@ -60,6 +60,9 @@
 html, body, #root { min-height: 100%; }
 /* Nada puede ensanchar la página hacia los lados (evita que el celular la achique) */
 html, body { overflow-x: clip; }
+/* Sin rebote al llegar arriba o abajo: la barra de navegación no se mueve con el contenido */
+html, body { overscroll-behavior-y: none; }
+.barra-fija { transform: translateZ(0); will-change: transform; }
 /* Íconos SVG: llenan su caja y toman el color del texto */
 .icono > svg { display: block; width: 100%; height: 100%; }
 body {

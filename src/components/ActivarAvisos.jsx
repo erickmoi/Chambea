@@ -3,9 +3,20 @@ import { useEffect, useState } from 'react'
 import Icono from './Icono'
 import { pushSoportado, necesitaInstalar, estadoPush, activarPush, probarPush } from '../lib/push'
 
+// Estado de los avisos en este celular; se actualiza en toda la app al activarlos o al volver a la app
+const EVENTO = 'chambea:avisos'
+export const avisarEstado = (estado) => window.dispatchEvent(new CustomEvent(EVENTO, { detail: estado }))
 export function useEstadoAvisos() {
   const [estado, setEstado] = useState('cargando')
-  useEffect(() => { estadoPush().then(setEstado, () => setEstado('no-soportado')) }, [])
+  useEffect(() => {
+    const revisar = () => estadoPush().then(setEstado, () => setEstado('no-soportado'))
+    revisar()
+    const alCambiar = (e) => setEstado(e.detail)
+    const alVolver = () => document.visibilityState === 'visible' && revisar()
+    window.addEventListener(EVENTO, alCambiar)
+    document.addEventListener('visibilitychange', alVolver)
+    return () => { window.removeEventListener(EVENTO, alCambiar); document.removeEventListener('visibilitychange', alVolver) }
+  }, [])
   return [estado, setEstado]
 }
 
@@ -21,10 +32,11 @@ export default function ActivarAvisos({ compacto = false, onListo, avisar }) {
     setError('')
     try {
       await activarPush()
+      onListo?.()
       setEstado('activo')
+      avisarEstado('activo')
       await probarPush().catch(() => {})
       avisar?.('Avisos activados. Te mandamos uno de prueba.')
-      onListo?.()
     } catch (e) {
       setError(e.message)
     } finally {
@@ -45,7 +57,7 @@ export default function ActivarAvisos({ compacto = false, onListo, avisar }) {
     <div className="space-y-3">
       {!compacto && (
         <ul className="space-y-2 text-sm text-slate-700">
-          <li className="flex gap-2"><Icono n="huella" size={18} className="mt-px shrink-0 text-marca-texto" /><span>Recordatorio para <b>marcar tu entrada en GeoVictoria</b> antes de cada turno de planilla.</span></li>
+          <li className="flex gap-2"><Icono n="huella" size={18} className="mt-px shrink-0 text-marca-texto" /><span>Planilla: <b>marcar entrada y salida en GeoVictoria</b>. Servicios Profesionales: <b>firmar la hoja de asistencia</b>.</span></li>
           <li className="flex gap-2"><Icono n="comida" size={18} className="mt-px shrink-0 text-marca-texto" /><span>Al empezar tu turno: tu hora de <b>almuerzo o cena</b> y de <b>descanso</b>.</span></li>
           <li className="flex gap-2"><Icono n="cambio" size={18} className="mt-px shrink-0 text-marca-texto" /><span>Cuando te propongan una permuta o respondan la tuya.</span></li>
         </ul>

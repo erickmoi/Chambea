@@ -33,7 +33,7 @@ export function useAvisos(activo, alNuevo) {
 }
 
 const ICONO_TIPO = {
-  marcaje: 'huella', inicio_turno: 'comida', horario_cambiado: 'calendario', solicitud_cancelada: 'cancelar', cambio_aplicado: 'repetir', cambio_deshecho: 'historial',
+  marcaje: 'huella', salida: 'salir', inicio_turno: 'comida', pausas_cambiadas: 'comida', sincronizacion: 'recargar', horario_cambiado: 'calendario', solicitud_cancelada: 'cancelar', cambio_aplicado: 'repetir', cambio_deshecho: 'historial',
   eleccion_declinada: 'cancelar', nueva_oferta: 'hola', nueva_solicitud: 'trato', oferta_retirada: 'cancelar', propuesta: 'proponer',
   propuesta_rechazada: 'cancelar', te_eligieron: 'ok',
 }
