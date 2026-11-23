@@ -1,7 +1,16 @@
 // Versión visible en Ajustes y notas de "Novedades" (se muestran una vez por versión)
-export const VERSION = '0.6.6'
+export const VERSION = '0.6.7'
 
 export const NOVEDADES = [
+  {
+    version: '0.6.7',
+    titulo: 'Más avisos a tu medida',
+    puntos: [
+      'Referencias: recordatorio para enviar el reporte en turnos de planilla de día (7:15 AM, o la hora que elijas).',
+      'Marcar salida: elige si el aviso llega a la hora exacta o 5, 10, 15, 20 o 30 minutos después.',
+      'Nueva pantalla de entrada: Chambea ahora es tu app de gestión de turnos.',
+    ],
+  },
   {
     version: '0.6.6',
     titulo: 'Avisos de entrada y salida',

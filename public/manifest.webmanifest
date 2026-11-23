@@ -1,13 +1,13 @@
 {
-  "name": "Chambea · Cambios de turno",
+  "name": "Chambea · Gestión de turnos",
   "short_name": "Chambea",
-  "description": "Cambios de turno entre compañeros: planilla y servicios profesionales.",
+  "description": "Gestión de turnos: horario, permutas y avisos de planilla y servicios profesionales.",
   "lang": "es",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f8fafc",
+  "background_color": "#0f5f52",
   "theme_color": "#f8fafc",
   "id": "/",
   "icons": [

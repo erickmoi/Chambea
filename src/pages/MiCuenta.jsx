@@ -196,6 +196,9 @@ function AvisosPersonales({ cuenta, recargar, avisar }) {
     avisar_bolsa: cuenta.avisar_bolsa !== false,
     avisar_pausas: cuenta.avisar_pausas !== false,
     recordar_salida: cuenta.recordar_salida !== false,
+    salida_min: cuenta.salida_min ?? 0,
+    referencias_aviso: cuenta.referencias_aviso !== false,
+    referencias_hora: cuenta.referencias_hora || '07:15',
   })
   const cambiar = async (campo, valor) => {
     const antes = p
@@ -218,7 +221,28 @@ function AvisosPersonales({ cuenta, recargar, avisar }) {
       )}
       <Interruptor activo={p.recordar_salida} onCambio={(v) => cambiar('recordar_salida', v)}
         etiqueta={<span className="flex items-center gap-2"><Icono n="salir" size={18} className="text-marca-texto" />Marcar salida (planilla)</span>}
-        ayuda="A la hora en que termina tu turno de planilla." />
+        ayuda="Cuando termina tu turno de planilla." />
+      {p.recordar_salida && (
+        <div>
+          <span className="etiqueta">¿Cuándo?</span>
+          <Segmentado compacto etiqueta="Minutos después de la salida" valor={String(p.salida_min)} onCambio={(v) => cambiar('salida_min', Number(v))}
+            opciones={[0, 5, 10, 15, 20, 30].map((m) => ({ id: String(m), texto: m ? `+${m}` : 'A la hora', etiqueta: m ? `${m} minutos después` : 'A la hora de salida' }))} />
+        </div>
+      )}
+      {cuenta.referencias_planilla && (
+        <>
+          <Interruptor activo={p.referencias_aviso} onCambio={(v) => cambiar('referencias_aviso', v)}
+            etiqueta={<span className="flex items-center gap-2"><Icono n="proponer" size={18} className="text-marca-texto" />Reporte de referencias</span>}
+            ayuda="En tus turnos de planilla de día (7 AM – 7 PM) con referencias." />
+          {p.referencias_aviso && (
+            <label className="flex items-center justify-between gap-3 text-sm text-slate-700">
+              Hora del recordatorio
+              <input type="time" className="input mono w-36" value={p.referencias_hora}
+                onChange={(e) => e.target.value && cambiar('referencias_hora', e.target.value)} />
+            </label>
+          )}
+        </>
+      )}
       <Interruptor activo={p.avisar_pausas} onCambio={(v) => cambiar('avisar_pausas', v)}
         etiqueta={<span className="flex items-center gap-2"><Icono n="comida" size={18} className="text-marca-texto" />Al empezar mi turno</span>}
         ayuda="Te recordamos tu hora de almuerzo o cena y de descanso." />

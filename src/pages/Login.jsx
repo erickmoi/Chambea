@@ -1,9 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase, emailDe, normalizarUsuario, mensajeError } from '../lib/supabase'
 import { telValido, limpiarTel } from '../lib/datos'
 import { entrarConClave } from '../lib/acceso'
 import CampoClave, { claveValida } from '../components/CampoClave'
 import Icono from '../components/Icono'
+import { useLogo } from '../lib/logo'
+
+// Lo que hace Chambea, rotando en la portada
+const FRASES = [
+  { icono: 'calendario', titulo: 'Tu horario siempre al día', texto: 'Sincronizado con la hoja oficial, con almuerzo, cena y descanso.' },
+  { icono: 'cambio', titulo: 'Permutas en un toque', texto: 'Te decimos qué turnos te sirven sin quedar pegado.' },
+  { icono: 'huella', titulo: 'Nunca olvides marcar', texto: 'Recordatorios de GeoVictoria y de la hoja de asistencia.' },
+  { icono: 'equipo', titulo: '¿Quién está de turno?', texto: 'Ve a tu equipo de planilla y de servicios profesionales.' },
+]
+// Íconos que flotan en el fondo
+const FONDO = [
+  ['sol', '8%', '12%', 34, 0], ['luna', '82%', '9%', 30, 2], ['calendario', '12%', '72%', 38, 4], ['cambio', '78%', '64%', 36, 1],
+  ['reloj', '46%', '6%', 26, 3], ['tarde', '88%', '38%', 28, 5], ['cafe', '4%', '44%', 26, 2.5], ['huella', '60%', '86%', 30, 1.5],
+]
 
 export default function Login() {
   const [modo, setModo] = useState('entrar') // 'entrar' | 'crear'
@@ -54,28 +68,57 @@ export default function Login() {
     }
   }
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-marca to-marca-oscuro px-4">
-      <div className="animar-entrada w-full max-w-sm rounded-3xl bg-superficie p-6 shadow-xl">
-        <div className="mb-6 flex flex-col items-center text-center">
-          <span className="animar-pop flex h-16 w-16 items-center justify-center rounded-2xl bg-marca-claro text-marca-texto">
-            <Icono n="cambio" size={38} />
-          </span>
-          <h1 className="mt-3 text-2xl font-bold text-slate-900">Chambea</h1>
-          <p className="text-sm text-slate-500">Cambios de turno entre compañeros</p>
-        </div>
+  const logo = useLogo()
+  const [frase, setFrase] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setFrase((i) => (i + 1) % FRASES.length), 3500)
+    return () => clearInterval(t)
+  }, [])
+  const f = FRASES[frase]
 
-        <div className="mb-5 grid grid-cols-2 rounded-xl bg-slate-100 p-1 text-sm font-semibold">
+  return (
+    <div className="portada relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-4 py-8 md:flex-row md:gap-16">
+      {/* Fondo vivo: íconos flotando */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        {FONDO.map(([ic, x, y, t, d]) => (
+          <span key={ic + x} className="flotar absolute text-white/15" style={{ left: x, top: y, animationDelay: `${d}s` }}>
+            <Icono n={ic} size={t} />
+          </span>
+        ))}
+      </div>
+
+      {/* Portada */}
+      <div className="relative z-10 mb-6 flex max-w-sm flex-col items-center text-center text-white md:mb-0 md:items-start md:text-left">
+        <img src={logo} alt="" className="levitar h-20 w-20 rounded-3xl shadow-2xl ring-4 ring-white/20 md:h-24 md:w-24" />
+        <h1 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">Chambea</h1>
+        <p className="text-lg font-medium text-white/85">Gestión de turnos</p>
+        <div key={frase} className="animar-entrada mt-5 hidden w-full items-start gap-3 rounded-2xl bg-white/10 p-4 text-left backdrop-blur md:flex">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15"><Icono n={f.icono} size={24} /></span>
+          <span>
+            <span className="block font-semibold">{f.titulo}</span>
+            <span className="block text-sm text-white/80">{f.texto}</span>
+          </span>
+        </div>
+        <p key={'m' + frase} className="animar-entrada mt-3 flex items-center gap-2 text-sm text-white/85 md:hidden">
+          <Icono n={f.icono} size={18} />{f.titulo}
+        </p>
+        <div className="mt-3 flex gap-1.5" aria-hidden="true">
+          {FRASES.map((_, i) => <span key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === frase ? 'w-5 bg-white' : 'w-1.5 bg-white/40'}`} />)}
+        </div>
+      </div>
+
+      <div className="animar-hoja relative z-10 w-full max-w-sm rounded-3xl bg-superficie p-6 shadow-2xl">
+        <div role="tablist" aria-label="Entrar o crear cuenta" className="relative mb-5 grid grid-cols-2 rounded-xl bg-slate-100 p-1 text-sm font-semibold">
+          <span aria-hidden="true" className={`absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-lg bg-superficie shadow transition-transform duration-300 ${modo === 'crear' ? 'translate-x-full' : ''}`} />
           {['entrar', 'crear'].map((m) => (
-            <button key={m} type="button" onClick={() => { setModo(m); setError('') }}
-              className={`rounded-lg py-2 ${modo === m ? 'bg-superficie text-marca-texto shadow' : 'text-slate-500'}`}>
+            <button key={m} type="button" role="tab" aria-selected={modo === m} onClick={() => { setModo(m); setError('') }}
+              className={`relative rounded-lg py-2 transition-colors ${modo === m ? 'text-marca-texto' : 'text-slate-500'}`}>
               {m === 'entrar' ? 'Entrar' : 'Crear cuenta'}
             </button>
           ))}
         </div>
 
-        <form onSubmit={enviar} className="space-y-4">
-          <div>
+        <form key={modo} onSubmit={enviar} className="animar-entrada space-y-4">          <div>
             <label className="etiqueta" htmlFor="usuario">Usuario</label>
             <input id="usuario" className="input" autoCapitalize="none" autoCorrect="off" autoComplete="username"
               placeholder="ej. maria.lopez" value={usuario} onChange={(e) => setUsuario(e.target.value)} />

@@ -231,3 +231,18 @@ html.letra-grande { font-size: 112.5%; }
 /* Turnos cortos (tarde 3–11 PM, 6–10 PM, 7–11 PM · mañana 7 AM–3 PM): rayado suave y borde punteado */
 .talon-corto { background-image: repeating-linear-gradient(135deg, transparent 0 7px, color-mix(in oklab, currentColor 12%, transparent) 7px 9px); }
 .turno-corto { background-image: repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in oklab, currentColor 14%, transparent) 5px 7px); outline: 1.5px dashed color-mix(in oklab, currentColor 55%, transparent); outline-offset: -1.5px; }
+
+/* ---------- Portada (inicio de sesión) ---------- */
+.portada {
+  background: linear-gradient(135deg, var(--color-marca) 0%, var(--color-marca-oscuro) 55%, color-mix(in oklab, var(--color-marca) 55%, #0b1324) 100%);
+  background-size: 200% 200%;
+  animation: degradado 14s ease-in-out infinite alternate;
+}
+@keyframes degradado { from { background-position: 0% 0%; } to { background-position: 100% 100%; } }
+@keyframes flotar {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(10px, -18px) rotate(8deg); }
+}
+@keyframes levitar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.flotar { animation: flotar 9s ease-in-out infinite; }
+.levitar { animation: levitar 4s ease-in-out infinite; }

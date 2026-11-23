@@ -35,10 +35,10 @@ Deno.serve(async (req) => {
   if (archivo === 'manifest.webmanifest' || archivo === 'manifest') {
     const icono = (tam: string) => `/icons/logos/${logo}-${tam}.png`
     const manifest = {
-      name: 'Chambea · Cambios de turno', short_name: 'Chambea', id: '/',
-      description: 'Cambios de turno entre compañeros: planilla y servicios profesionales.',
+      name: 'Chambea · Gestión de turnos', short_name: 'Chambea', id: '/',
+      description: 'Gestión de turnos: horario, permutas y avisos de planilla y servicios profesionales.',
       lang: 'es', start_url: '/', scope: '/', display: 'standalone', orientation: 'portrait',
-      background_color: '#f8fafc', theme_color: '#f8fafc',
+      background_color: '#0f5f52', theme_color: '#f8fafc',
       icons: [
         { src: icono('192'), sizes: '192x192', type: 'image/png', purpose: 'any' },
         { src: icono('512'), sizes: '512x512', type: 'image/png', purpose: 'any' },
