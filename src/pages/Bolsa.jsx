@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Icono from '../components/Icono'
 import { Cargando, Hoja, confirmar } from '../components/ui'
 import { Segmentado, TarjetaTurno, momento } from '../components/turnos'
+import { useDeslizar, claseDeslizar } from '../lib/deslizar'
 import { PublicarTurno } from '../components/AccionesTurno'
 import { rpc, TIPO, ESTADO, FUNCION, textoTurno, nombreBonito, misTurnos } from '../lib/datos'
 import { vibrar } from '../lib/tema'
@@ -66,10 +67,20 @@ export default function Bolsa({ cuenta, avisar, onAbrirSolicitud, recarga, pendi
 
   useEffect(() => { setLista(null); setMov(null); cargar() }, [cargar, recarga])
 
+  const ORDEN_TABS = ['planilla', 'sp', 'mios']
+  const [dirTab, setDirTab] = useState(0)
+  const irTab = (n) => {
+    const i = ORDEN_TABS.indexOf(tab) + n
+    if (i < 0 || i >= ORDEN_TABS.length) return
+    setDirTab(n); setTab(ORDEN_TABS[i])
+  }
+  const cambiarTab = (v) => { setDirTab(Math.sign(ORDEN_TABS.indexOf(v) - ORDEN_TABS.indexOf(tab))); setTab(v) }
+  const refDeslizar = useDeslizar({ onSiguiente: () => irTab(1), onAnterior: () => irTab(-1) })
+
   const visibles = evaluadas.filter((s) => filtro === 'todo' || (filtro === 'sirve' ? ['permutar', 'sirve'].includes(s.viabilidad?.estado) : s.tipo === filtro))
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 p-4">
+    <div ref={refDeslizar} className="mx-auto max-w-3xl space-y-4 p-4">
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Permutas</h1>
         <button className="btn-secundario flex items-center gap-1.5 px-3 py-2 text-sm" onClick={cargar} aria-label="Actualizar">
@@ -77,7 +88,7 @@ export default function Bolsa({ cuenta, avisar, onAbrirSolicitud, recarga, pendi
         </button>
       </div>
 
-      <Segmentado etiqueta="Sección" valor={tab} onCambio={setTab} opciones={[
+      <Segmentado etiqueta="Sección" valor={tab} onCambio={cambiarTab} opciones={[
         { id: 'planilla', texto: 'Planilla' }, { id: 'sp', texto: 'Servicios Profesionales' }, { id: 'mios', texto: 'Míos', cuenta: pendientes },
       ]} />
 
@@ -107,14 +118,14 @@ export default function Bolsa({ cuenta, avisar, onAbrirSolicitud, recarga, pendi
             <p className="mt-1 text-sm text-slate-600">Aquí aparecen los turnos que tus compañeros quieren {tab === 'sp' ? 'permutar o donar' : 'permutar'} y que tú puedes tomar. Para publicar uno tuyo, tócalo en tu horario.</p>
           </div>
         ) : (
-          <ul className="escalonado space-y-3 pb-20">
+          <ul key={tab} className={`escalonado space-y-3 pb-20 ${claseDeslizar(dirTab)}`}>
             {visibles.map((s) => <TarjetaSolicitud key={s.id} s={s} enviando={enviando === s.id} onOfrecer={ofrecer} onClick={() => onAbrirSolicitud(s.id)} />)}
           </ul>
         )
       )}
 
       {tab === 'mios' && !mov && !error && <Cargando filas={3} />}
-      {tab === 'mios' && mov && <Mios mov={mov} onAbrir={onAbrirSolicitud} onDeshacer={deshacer} />}
+      {tab === 'mios' && mov && <div className={claseDeslizar(dirTab)}><Mios mov={mov} onAbrir={onAbrirSolicitud} onDeshacer={deshacer} /></div>}
 
       <button onClick={() => setAgregar(true)}
         className="btn-primario fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 flex items-center gap-2 rounded-full px-5 py-3.5 shadow-lg md:bottom-6">

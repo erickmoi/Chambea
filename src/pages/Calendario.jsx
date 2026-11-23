@@ -7,6 +7,7 @@ import DeTurno from '../components/DeTurno'
 import { pausasVisibles, guardarPausasVisibles, detalleMes, guardarDetalleMes } from '../lib/tema'
 import { HojaTurno, BuscarCambio, PublicarTurno, CorregirTurno } from '../components/AccionesTurno'
 import { misTurnos, rpc, exportarIcs, exportarCsv } from '../lib/datos'
+import { useDeslizar, claseDeslizar } from '../lib/deslizar'
 import {
   hoy, sumarDias, inicioSemana, inicioMes, finMes, sumarMeses, rangoDias,
   diaCorto, numDia, mesCorto, mesLargo, tituloMes, horario, horas, fechaCorta, tipoTurno, hora, horaCorta,
@@ -74,7 +75,9 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
     return m
   }, [turnos])
 
-  const mover = (n) => setCursor((c) => (vista === 'mes' ? sumarMeses(c, n) : sumarDias(c, 7 * n)))
+  const [dir, setDir] = useState(0)
+  const mover = (n) => { setDir(n); setCursor((c) => (vista === 'mes' ? sumarMeses(c, n) : sumarDias(c, 7 * n))) }
+  const refDeslizar = useDeslizar({ onSiguiente: () => mover(1), onAnterior: () => mover(-1) })
   const titulo = vista === 'mes'
     ? (cursor.slice(0, 4) === hoy().slice(0, 4) ? mesLargo(cursor) : tituloMes(cursor))
     : mesCorto(semana) === mesCorto(sumarDias(semana, 6))
@@ -104,7 +107,7 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
   const cerrarTodo = () => { setSel(null); setAccion(null) }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-3 p-4">
+    <div ref={refDeslizar} className="mx-auto max-w-4xl space-y-3 p-4">
       {/* Barra compacta: título, navegación y filtros en dos líneas */}
       <div className="flex items-center gap-1">
         <h1 className="mr-auto whitespace-nowrap text-lg font-bold tracking-tight text-slate-900">Mi horario</h1>
@@ -116,7 +119,7 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5">
-        <Segmentado compacto etiqueta="Vista" valor={vista} onCambio={setVista}
+        <Segmentado compacto etiqueta="Vista" valor={vista} onCambio={(v) => { setDir(0); setVista(v) }}
           opciones={VISTAS.map((v) => ({ id: v.id, icono: v.icono, etiqueta: v.texto, texto: <span className="hidden sm:inline">{v.texto}</span> }))}
           className="grid-flow-col" />
         <Segmentado compacto etiqueta="Mostrar" valor={filtro} onCambio={setFiltro} opciones={[
@@ -148,7 +151,7 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
       {!datos && !error && <Cargando filas={4} />}
 
       {datos && (
-        <div key={vista + desde} className="animar-entrada">
+        <div key={vista + desde} className={claseDeslizar(dir)}>
           {vista === 'agenda' && <Agenda semana={semana} porDia={porDia} publicados={publicados} onTurno={abrir} onDeTurno={setDeTurno} pausas={pausas} />}
           {vista === 'semana' && <Semana semana={semana} porDia={porDia} onTurno={abrir} />}
           {vista === 'mes' && <Mes cursor={cursor} porDia={porDia} dia={diaMes} onDia={setDiaMes} publicados={publicados} onTurno={abrir} onDeTurno={setDeTurno} conHora={detalle === 'hora'} />}

@@ -10,6 +10,7 @@ export const NOVEDADES = [
       'Planilla: 12 h de descanso entre turnos; días seguidos de día o de noche siempre se permiten.',
       'Antes de aplicar un cambio revisamos de nuevo las reglas de las dos personas.',
       'Buscar con quién cambiar ahora muestra todo el mes de una vez.',
+      'Desliza con el dedo: en Horario cambias de semana o mes, y en Permutas de sección.',
     ],
   },
   {
