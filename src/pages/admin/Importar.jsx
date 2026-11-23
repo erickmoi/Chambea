@@ -262,8 +262,8 @@ function Resultados({ lista }) {
         <div key={r.seccion} className="text-sm text-slate-700">
           <p className="font-semibold">{NOMBRE_SECCION[r.seccion]} · {fechaCorta(r.desde)} al {fechaCorta(r.hasta)}</p>
           <ul className="mt-1 list-disc pl-6">
-            <li>{r.insertados} turnos cargados ({r.reemplazados} reemplazados)</li>
-            {r.omitidos > 0 && <li>{r.omitidos} omitidos (ya estaban como cambio o repetidos)</li>}
+            <li>{r.insertados} turnos nuevos · {r.reemplazados} quitados · {r.pausas ?? 0} almuerzos/descansos actualizados</li>
+            {r.omitidos > 0 && <li>{r.omitidos} turnos sin cambios (se conservan sus permutas)</li>}
             {r.personas_nuevas?.length > 0 && <li>{r.personas_nuevas.length} persona(s) nueva(s)</li>}
             {r.enlazados_por_parecido?.length > 0 && <li>{r.enlazados_por_parecido.length} nombre(s) enlazados por parecido</li>}
             {r.solicitudes_canceladas > 0 && <li>{r.solicitudes_canceladas} solicitud(es) canceladas porque su turno cambió</li>}

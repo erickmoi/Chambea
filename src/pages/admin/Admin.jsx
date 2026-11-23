@@ -5,6 +5,7 @@ import { Aviso, Cargando } from '../../components/ui'
 import { Segmentado } from '../../components/turnos'
 import { AjustesAdmin } from '../MiCuenta.jsx'
 import { rpc, enlaceWhatsApp, nombreBonito } from '../../lib/datos'
+import { supabase } from '../../lib/supabase'
 import { msgInvitar } from '../../lib/mensajes'
 import { hoy, sumarDias, fechaCorta, finMes, numDia, haceCuanto } from '../../lib/fechas'
 
@@ -52,11 +53,14 @@ function Panel({ irA }) {
   const [faltan, setFaltan] = useState(null)
   const [error, setError] = useState('')
   const [verTodos, setVerTodos] = useState(false)
+  const [sync, setSync] = useState(null)
 
   const cargar = useCallback(async () => {
     setError('')
     try {
-      const [panel, sin] = await Promise.all([rpc('panel_admin'), rpc('personas_sin_cuenta')])
+      const [panel, sin, aj] = await Promise.all([rpc('panel_admin'), rpc('personas_sin_cuenta'),
+        supabase.from('ajustes').select('sync_ultima, sync_resumen').eq('id', 1).single().then((x) => x.data, () => null)])
+      setSync(aj)
       setP(panel)
       setFaltan(sin)
     } catch (e) { setError(e.message) }
@@ -81,6 +85,23 @@ function Panel({ irA }) {
           <Icono n="siguiente" size={18} />
         </button>
       ))}
+
+      <section className="tarjeta" aria-labelledby="t-sync">
+        <h2 id="t-sync" className="flex items-center gap-2 font-bold text-slate-900"><Icono n="recargar" size={20} className="text-marca-texto" />Hoja oficial</h2>
+        {sync?.sync_ultima ? (
+          <>
+            <p className={`mt-1 text-sm ${Date.now() - new Date(sync.sync_ultima) > 3 * 36e5 ? 'text-amber-800' : 'text-slate-700'}`}>
+              Última sincronización {haceCuanto(sync.sync_ultima)}{sync.sync_resumen?.cambios ? ` · ${sync.sync_resumen.cambios} cambio(s)` : ' · sin cambios'}
+            </p>
+            <ul className="mt-1 space-y-0.5 text-xs text-slate-600">
+              {(sync.sync_resumen?.secciones || []).map((s, i) => (
+                <li key={i}>{s.seccion === 'sp' ? 'Servicios Profesionales' : 'Planilla'} ({s.hoja}): {s.error ? <span className="text-red-700">{s.error}</span> : `${s.pausas} pausas · ${s.insertados} nuevos · ${s.reemplazados} quitados`}</li>
+              ))}
+            </ul>
+            {Date.now() - new Date(sync.sync_ultima) > 3 * 36e5 && <p className="mt-1 text-xs text-amber-800">Hace más de 3 horas que no llega nada: revisa el puente en script.google.com.</p>}
+          </>
+        ) : <p className="mt-1 text-sm text-slate-600">Todavía no se ha conectado el puente con la hoja oficial.</p>}
+      </section>
 
       <section className="tarjeta" aria-labelledby="t-registro">
         <div className="flex items-end justify-between gap-2">

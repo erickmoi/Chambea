@@ -1,7 +1,16 @@
 // Versión visible en Ajustes y notas de "Novedades" (se muestran una vez por versión)
-export const VERSION = '0.6.4'
+export const VERSION = '0.6.5'
 
 export const NOVEDADES = [
+  {
+    version: '0.6.5',
+    titulo: 'Horario siempre al día',
+    puntos: [
+      'Chambea se sincroniza cada hora con la hoja oficial de horarios.',
+      'Si cambia tu almuerzo, cena o descanso, te llega un aviso.',
+      'Si cambia tu horario, también te avisamos. Las permutas hechas en Chambea se conservan.',
+    ],
+  },
   {
     version: '0.6.4',
     titulo: 'Avisos al empezar tu turno',
