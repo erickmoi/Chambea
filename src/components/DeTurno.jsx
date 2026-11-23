@@ -37,7 +37,7 @@ export default function DeTurno({ fecha: inicial = hoy(), miPersona, onCerrar })
     }
     return [...g.values()].sort((a, b) => new Date(a.t.inicio) - new Date(b.t.inicio))
   }, [visibles, seccion])
-  const cuenta = (s) => new Set(visibles.filter((t) => t.seccion === s).map((t) => t.persona_id)).size
+  const cuenta = (s) => new Set(visibles.filter((t) => t.seccion === s && !t.persona?.gerencia).map((t) => t.persona_id)).size
 
   return (
     <Hoja titulo="¿Quién está de turno?" icono="equipo" onCerrar={onCerrar}>
@@ -60,6 +60,7 @@ export default function DeTurno({ fecha: inicial = hoy(), miPersona, onCerrar })
         <div className="escalonado space-y-3">
           {grupos.map(({ t, personas }) => {
             const m = momento(t)
+            const medicos = personas.filter((p) => !p.persona?.gerencia).length
             const deAyer = t.fecha !== fecha
             return (
               <section key={`${t.fecha}${t.etiqueta}`}>
@@ -67,7 +68,7 @@ export default function DeTurno({ fecha: inicial = hoy(), miPersona, onCerrar })
                   <Icono n={m.icono} size={18} className={seccion === 'sp' ? 'text-sp' : 'text-planilla'} />
                   <span className="mono">{horario(t.etiqueta)}</span>
                   {deAyer && <span className="font-normal text-slate-500">· desde el {fechaCorta(t.fecha)}</span>}
-                  <span className="ml-auto text-xs font-normal text-slate-500">{personas.length} {personas.length === 1 ? 'médico' : 'médicos'}</span>
+                  <span className="ml-auto text-xs font-normal text-slate-500">{medicos} {medicos === 1 ? 'médico' : 'médicos'}</span>
                 </h3>
                 <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl ring-1 ring-slate-200">
                   {personas.map((p) => (
@@ -75,7 +76,9 @@ export default function DeTurno({ fecha: inicial = hoy(), miPersona, onCerrar })
                       <span className="min-w-0 flex-1 truncate text-slate-900">
                         {nombreBonito(p.persona?.nombre)}{p.persona_id === miPersona && <b className="text-marca-texto"> (tú)</b>}
                       </span>
-                      <ChipFuncion funcion={p.funcion} />
+                      {p.persona?.gerencia
+                        ? <span className="rounded-full bg-marca-claro px-2 py-0.5 text-xs font-semibold text-marca-texto">Gerencia</span>
+                        : <ChipFuncion funcion={p.funcion} />}
                       {p.es_cambio && <Icono n="repetir" size={16} className="text-marca-texto" title="Cambio hecho en Chambea" />}
                     </li>
                   ))}

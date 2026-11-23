@@ -1,7 +1,16 @@
 // Versión visible en Ajustes y notas de "Novedades" (se muestran una vez por versión)
-export const VERSION = '0.6.8'
+export const VERSION = '0.6.9'
 
 export const NOVEDADES = [
+  {
+    version: '0.6.9',
+    titulo: 'Gerencia médica y grupos',
+    puntos: [
+      'Nueva categoría Gerencia médica: agrega sus turnos a mano y no participa en permutas.',
+      'En planilla, referencias permuta solo con referencias, triaje con triaje y supervisor con supervisor.',
+      '¿Quién está de turno? muestra a Gerencia con su etiqueta, sin sumarla al conteo de médicos.',
+    ],
+  },
   {
     version: '0.6.8',
     titulo: 'Permutas más claras',

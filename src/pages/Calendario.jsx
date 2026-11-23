@@ -5,7 +5,7 @@ import { Cargando, Hoja } from '../components/ui'
 import { TarjetaTurno, Segmentado, momento, letraSeccion } from '../components/turnos'
 import DeTurno from '../components/DeTurno'
 import { pausasVisibles, guardarPausasVisibles, detalleMes, guardarDetalleMes } from '../lib/tema'
-import { HojaTurno, BuscarCambio, PublicarTurno, CorregirTurno } from '../components/AccionesTurno'
+import { HojaTurno, BuscarCambio, PublicarTurno, CorregirTurno, AgregarTurno } from '../components/AccionesTurno'
 import { misTurnos, rpc, exportarIcs, exportarCsv } from '../lib/datos'
 import { useDeslizar, claseDeslizar } from '../lib/deslizar'
 import {
@@ -28,6 +28,7 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
   const [datos, setDatos] = useState(null)
   const [error, setError] = useState('')
   const [publicados, setPublicados] = useState({})
+  const [agregar, setAgregar] = useState(false)
   const [sel, setSel] = useState(null) // turno seleccionado
   const [accion, setAccion] = useState(null) // 'buscar' | 'publicar'
   const [diaMes, setDiaMes] = useState(hoy)
@@ -170,9 +171,18 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
         <span className="flex items-center gap-1"><Icono n="repetir" size={14} className="text-marca-texto" />Cambio hecho en Chambea</span>
       </div>
 
+      {cuenta.agrega_turnos && (
+        <button onClick={() => setAgregar(true)}
+          className="btn-primario fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 flex items-center gap-2 rounded-full px-5 py-3.5 shadow-lg md:bottom-6">
+          <Icono n="mas" size={20} />Agregar turno
+        </button>
+      )}
+      {agregar && <AgregarTurno fecha={vista === 'mes' ? diaMes : cursor} avisar={avisar} onCerrar={() => setAgregar(false)} onListo={cargar} />}
+
       {sel && !accion && (
         <HojaTurno t={sel} publicado={publicados[sel.id]} onCerrar={cerrarTodo}
-          onBuscar={() => setAccion('buscar')} onPublicar={() => setAccion('publicar')}
+          onBuscar={cuenta.en_permutas === false ? undefined : () => setAccion('buscar')} onPublicar={() => setAccion('publicar')}
+          textoCorregir={cuenta.agrega_turnos && sel.manual ? 'Editar o quitar este turno' : undefined}
           onVerSolicitud={(id) => { cerrarTodo(); onAbrirSolicitud(id) }}
           onDeTurno={() => { const f = sel.fecha; cerrarTodo(); setDeTurno(f) }}
           onCorregir={cuenta.puede_corregir ? () => setAccion('corregir') : undefined} />

@@ -92,6 +92,12 @@ export default function Bolsa({ cuenta, avisar, onAbrirSolicitud, recarga, pendi
         { id: 'planilla', texto: 'Planilla' }, { id: 'sp', texto: 'Servicios Profesionales' }, { id: 'mios', texto: 'Míos', cuenta: pendientes },
       ]} />
 
+      {cuenta.en_permutas === false && (
+        <p className="flex items-center gap-2 rounded-xl bg-marca-claro p-3 text-sm text-marca-texto">
+          <Icono n="info" size={18} />Gerencia médica: aquí ves lo que el equipo está moviendo, sin participar en permutas.
+        </p>
+      )}
+
       {tab !== 'mios' && (
         <div className="fila-lateral -mx-1 flex gap-2 px-1">
           {FILTROS[tab].map((f) => (
@@ -127,10 +133,10 @@ export default function Bolsa({ cuenta, avisar, onAbrirSolicitud, recarga, pendi
       {tab === 'mios' && !mov && !error && <Cargando filas={3} />}
       {tab === 'mios' && mov && <div className={claseDeslizar(dirTab)}><Mios mov={mov} onAbrir={onAbrirSolicitud} onDeshacer={deshacer} /></div>}
 
-      <button onClick={() => setAgregar(true)}
+      {cuenta.en_permutas === false ? null : <button onClick={() => setAgregar(true)}
         className="btn-primario fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 flex items-center gap-2 rounded-full px-5 py-3.5 shadow-lg md:bottom-6">
         <Icono n="mas" size={20} />Agregar solicitud
-      </button>
+      </button>}
 
       {agregar && !elegido && (
         <ElegirTurno cuenta={cuenta} seccion={tab === 'mios' ? null : tab} onCerrar={() => setAgregar(false)} onElegir={setElegido} />

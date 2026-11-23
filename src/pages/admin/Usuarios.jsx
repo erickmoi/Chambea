@@ -245,16 +245,26 @@ function Personas({ avisar }) {
   const [filtro, setFiltro] = useState('')
   useEffect(() => {
     if (!abierto || lista) return
-    supabase.from('personas').select('id, nombre, es_supervisor, referencias_planilla, referencias_sp, activo').order('nombre')
+    supabase.from('personas').select('id, nombre, es_supervisor, referencias_planilla, referencias_sp, activo, gerencia').order('nombre')
       .then(({ data }) => setLista(data || []))
   }, [abierto, lista])
 
-  const cambiar = async (p, campo) => {
-    const nuevo = { ...p, [campo]: !p[campo] }
+  const [nuevoNombre, setNuevoNombre] = useState('')
+  const [nuevaGerencia, setNuevaGerencia] = useState(false)
+  const agregarPersona = async () => {
+    const { error } = await supabase.rpc('agregar_persona', { p_nombre: nuevoNombre, p_gerencia: nuevaGerencia })
+    if (error) return avisar(mensajeError(error), 'error')
+    avisar('Persona agregada'); setNuevoNombre(''); setNuevaGerencia(false); setLista(null)
+  }
+  // Categoría en planilla: una sola a la vez
+  const categoria = (p) => (p.gerencia ? 'gerencia' : p.es_supervisor ? 'supervisor' : p.referencias_planilla ? 'referencias' : 'triaje')
+  const ponerCategoria = (p, c) => guardar(p, { ...p, gerencia: c === 'gerencia', es_supervisor: c === 'supervisor', referencias_planilla: c === 'referencias' })
+  const cambiar = (p, campo) => guardar(p, { ...p, [campo]: !p[campo] })
+  const guardar = async (p, nuevo) => {
     setLista((l) => l.map((x) => (x.id === p.id ? nuevo : x)))
     const { error } = await supabase.rpc('actualizar_persona', {
       p_id: p.id, p_es_supervisor: nuevo.es_supervisor, p_referencias_planilla: nuevo.referencias_planilla,
-      p_referencias_sp: nuevo.referencias_sp, p_activo: nuevo.activo,
+      p_referencias_sp: nuevo.referencias_sp, p_activo: nuevo.activo, p_gerencia: nuevo.gerencia,
     })
     if (error) { avisar(mensajeError(error), 'error'); setLista((l) => l.map((x) => (x.id === p.id ? p : x))) }
   }
@@ -273,7 +283,16 @@ function Personas({ avisar }) {
       </button>
       {abierto && (
         <div className="tarjeta space-y-3">
-          <p className="text-xs text-slate-500">Define quién puede cambiar turnos de supervisor o de referencias. Toca para encender o apagar.</p>
+          <p className="text-xs text-slate-500">La categoría define con quién permuta cada persona en planilla. Gerencia médica no participa en permutas y agrega sus turnos a mano.</p>
+          <div className="space-y-2 rounded-xl bg-slate-50 p-3">
+            <p className="text-sm font-semibold text-slate-700">Agregar persona que no está en el horario</p>
+            <input className="input" placeholder="Nombre completo, como en la hoja" value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} />
+            <div className="flex items-center gap-2">
+              <button onClick={() => setNuevaGerencia(!nuevaGerencia)} aria-pressed={nuevaGerencia}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition active:scale-95 ${nuevaGerencia ? 'bg-marca text-sobre-marca' : 'bg-slate-200 text-slate-600'}`}>Gerencia médica</button>
+              <button className="btn-primario ml-auto px-4 py-2 text-sm" disabled={nuevoNombre.trim().length < 5} onClick={agregarPersona}>Agregar</button>
+            </div>
+          </div>
           <input className="input" placeholder="Buscar nombre" value={filtro} onChange={(e) => setFiltro(e.target.value)} />
           {!lista ? <Cargando filas={3} /> : (
             <ul className="divide-y divide-slate-100">
@@ -281,8 +300,13 @@ function Personas({ avisar }) {
                 <li key={p.id} className="space-y-1.5 py-2.5">
                   <p className={`text-sm font-medium ${p.activo ? 'text-slate-900' : 'text-slate-400 line-through'}`}>{p.nombre}</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {chip(p, 'es_supervisor', 'Supervisor')}
-                    {chip(p, 'referencias_planilla', 'Ref. planilla')}
+                    <select className="input w-auto py-1 text-xs font-semibold" aria-label={`Categoría de ${p.nombre}`}
+                      value={categoria(p)} onChange={(e) => ponerCategoria(p, e.target.value)}>
+                      <option value="triaje">Triaje</option>
+                      <option value="referencias">Referencias</option>
+                      <option value="supervisor">Supervisor</option>
+                      <option value="gerencia">Gerencia médica</option>
+                    </select>
                     {chip(p, 'referencias_sp', 'Ref. SP')}
                     {chip(p, 'activo', 'Activa')}
                   </div>

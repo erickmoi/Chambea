@@ -168,7 +168,8 @@ export default function Inicio({ cuenta, avisar, onAbrirSolicitud, onIr, recarga
 
       {sel && !accion && (
         <HojaTurno t={sel} publicado={publicados[sel.id]} onCerrar={cerrarTodo}
-          onBuscar={() => setAccion('buscar')} onPublicar={() => setAccion('publicar')}
+          onBuscar={cuenta.en_permutas === false ? undefined : () => setAccion('buscar')} onPublicar={() => setAccion('publicar')}
+          textoCorregir={cuenta.agrega_turnos && sel.manual ? 'Editar o quitar este turno' : undefined}
           onVerSolicitud={(id) => { cerrarTodo(); onAbrirSolicitud(id) }}
           onDeTurno={() => { const f = sel.fecha; cerrarTodo(); setDeTurno(f) }}
           onCorregir={cuenta.puede_corregir ? () => setAccion('corregir') : undefined} />
@@ -237,7 +238,7 @@ function TurnoPrincipal({ t, enCurso, ahora, cuenta, onClick }) {
       )}
 
       {/* Solo se puede cambiar con anticipación: si ya está en curso no se ofrece */}
-      {!enCurso && (
+      {!enCurso && cuenta.en_permutas !== false && (
         <button onClick={onClick} className="flex w-full items-center justify-center gap-1.5 border-t border-slate-200 py-3 text-sm font-semibold text-marca-texto hover:bg-slate-50">
           <Icono n="cambio" size={18} />Cambiar este turno
         </button>

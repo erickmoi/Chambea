@@ -16,7 +16,7 @@ const leerCache = () => {
 // Mis turnos en un rango. Si no hay internet, devuelve lo último guardado.
 export async function misTurnos(personaId, desde, hasta) {
   const { data, error } = await supabase.from('turnos')
-    .select('id, seccion, fecha, inicio, fin, etiqueta, funcion, es_cambio, persona_original_id, comida, descanso')
+    .select('id, seccion, fecha, inicio, fin, etiqueta, funcion, es_cambio, persona_original_id, comida, descanso, manual')
     .eq('persona_id', personaId).gte('fecha', desde).lte('fecha', hasta).order('inicio')
   if (error) {
     const c = leerCache()
@@ -110,7 +110,7 @@ export const telBonito = (t) => (t ? `${t.slice(0, 4)}-${t.slice(4)}` : '')
 // Todos los turnos que tocan ese día (incluye las noches que vienen del día anterior)
 export async function turnosDelDia(fecha) {
   const { data, error } = await supabase.from('turnos')
-    .select('id, persona_id, seccion, fecha, inicio, fin, etiqueta, funcion, es_cambio, persona:personas!turnos_persona_id_fkey(nombre)')
+    .select('id, persona_id, seccion, fecha, inicio, fin, etiqueta, funcion, es_cambio, persona:personas!turnos_persona_id_fkey(nombre, gerencia)')
     .gte('fecha', sumarDias(fecha, -1)).lte('fecha', fecha)
     .lt('inicio', `${sumarDias(fecha, 1)}T00:00:00-06:00`).gt('fin', `${fecha}T00:00:00-06:00`)
     .order('inicio')

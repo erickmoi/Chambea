@@ -8,7 +8,7 @@ import { fechaCorta, horario, sumarDias, hoy, inicioMes, finMes, fechaNumerica, 
 import { vibrar } from '../lib/tema'
 import { msgPropuesta, msgGrupo, msgInvitar } from '../lib/mensajes'
 
-export function HojaTurno({ t, publicado, onCerrar, onBuscar, onPublicar, onVerSolicitud, onDeTurno, onCorregir }) {
+export function HojaTurno({ t, publicado, onCerrar, onBuscar, onPublicar, onVerSolicitud, onDeTurno, onCorregir, textoCorregir }) {
   const futuro = new Date(t.inicio) > new Date()
   return (
     <Hoja titulo={fechaCorta(t.fecha)} icono="calendario" onCerrar={onCerrar}>
@@ -21,7 +21,7 @@ export function HojaTurno({ t, publicado, onCerrar, onBuscar, onPublicar, onVerS
           <p className="text-sm text-slate-600">Ya está en Permutas como <b>{TIPO[publicado.tipo].texto.toLowerCase()}</b> ({publicado.estado === 'por_confirmar' ? 'esperando confirmación' : 'abierta'}).</p>
           <button className="btn-primario w-full" onClick={() => onVerSolicitud(publicado.id)}>Ver solicitud</button>
         </div>
-      ) : (
+      ) : !onBuscar ? null : (
         <div className="mt-5 grid gap-2">
           <button className="btn-primario flex items-center justify-center gap-2 py-3" onClick={onBuscar}>
             <Icono n="buscar" size={20} />Buscar con quién cambiar
@@ -39,7 +39,7 @@ export function HojaTurno({ t, publicado, onCerrar, onBuscar, onPublicar, onVerS
       )}
       {onCorregir && (
         <button className="mx-auto mt-2 flex min-h-9 items-center gap-1 px-2 text-xs text-slate-500 underline decoration-dotted underline-offset-4 hover:text-slate-700" onClick={onCorregir}>
-          ¿Este turno vino mal en la hoja? Corregir
+          {textoCorregir || '¿Este turno vino mal en la hoja? Corregir'}
         </button>
       )}
     </Hoja>
@@ -347,6 +347,81 @@ export function CorregirTurno({ t, onCerrar, avisar, onListo }) {
       </div>
       <button className="btn-primario mt-5 w-full py-3" disabled={enviando} onClick={guardar}>{enviando ? 'Guardando…' : 'Guardar corrección'}</button>
       <button className="mt-2 w-full rounded-xl py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50" disabled={enviando} onClick={quitar}>No tengo este turno · Quitarlo</button>
+    </Hoja>
+  )
+}
+
+// ---------------------------------------------------------------- agregar un turno a mano (gerencia médica / administración)
+const HORARIOS_RAPIDOS = [
+  { id: '07:00-19:00', texto: '7–7 día' }, { id: '19:00-07:00', texto: '7–7 noche' },
+  { id: '06:00-18:00', texto: '6–6 día' }, { id: '18:00-06:00', texto: '6–6 noche' },
+  { id: '07:00-15:00', texto: '7 AM–3 PM' }, { id: '15:00-23:00', texto: '3–11 PM' },
+  { id: '19:00-23:00', texto: '7–11 PM' }, { id: '18:00-22:00', texto: '6–10 PM' },
+]
+
+export function AgregarTurno({ fecha: fechaInicial, onCerrar, avisar, onListo }) {
+  const [seccion, setSeccion] = useState(() => { try { return localStorage.getItem('chambea.agregar.seccion') || 'planilla' } catch { return 'planilla' } })
+  const [fecha, setFecha] = useState(fechaInicial && fechaInicial >= hoy() ? fechaInicial : hoy())
+  const [ini, setIni] = useState('07:00')
+  const [fin, setFin] = useState('19:00')
+  const [comida, setComida] = useState(['', ''])
+  const [descanso, setDescanso] = useState(['', ''])
+  const [masDetalles, setMasDetalles] = useState(false)
+  const [enviando, setEnviando] = useState(false)
+  const pausa = ([a, b]) => (a && b ? `${a}–${b}` : '')
+  const elegido = `${ini}-${fin}`
+
+  const guardar = async (otro = false) => {
+    if (!fecha) return avisar('Elige la fecha.', 'error')
+    if (!ini || !fin || ini === fin) return avisar('Revisa la hora de inicio y de fin.', 'error')
+    setEnviando(true)
+    try {
+      await rpc('agregar_turno', { p_seccion: seccion, p_fecha: fecha, p_inicio: ini, p_fin: fin,
+        p_comida: pausa(comida) || null, p_descanso: pausa(descanso) || null })
+      try { localStorage.setItem('chambea.agregar.seccion', seccion) } catch { /* nada */ }
+      vibrar()
+      avisar(`Turno del ${fechaCorta(fecha)} agregado`)
+      onListo()
+      if (otro) setFecha(sumarDias(fecha, 1)); else onCerrar()
+    } catch (e) { avisar(e.message, 'error') } finally { setEnviando(false) }
+  }
+
+  return (
+    <Hoja titulo="Agregar turno" icono="mas" onCerrar={onCerrar}>
+      <div className="space-y-4">
+        <Segmentado etiqueta="Sección" valor={seccion} onCambio={setSeccion} opciones={[
+          { id: 'planilla', texto: 'Planilla' }, { id: 'sp', texto: 'Servicios Profesionales' },
+        ]} />
+        <label className="block text-sm font-medium text-slate-700" htmlFor="agregar-fecha">Fecha
+          <input id="agregar-fecha" type="date" className="input mono mt-1" min={hoy()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+        </label>
+        <div>
+          <p className="mb-1.5 text-sm font-medium text-slate-700">Horario</p>
+          <div className="flex flex-wrap gap-1.5">
+            {HORARIOS_RAPIDOS.map((h) => (
+              <button key={h.id} onClick={() => { const [a, b] = h.id.split('-'); setIni(a); setFin(b) }} aria-pressed={elegido === h.id}
+                className={`rounded-full px-3 py-1.5 text-sm font-medium transition active:scale-95 ${elegido === h.id ? 'bg-marca text-sobre-marca' : 'bg-slate-100 text-slate-700'}`}>
+                {h.texto}
+              </button>
+            ))}
+          </div>
+          <div className="mt-2"><Horas id="agregar-horas" etiqueta="Turno" valor={[ini, fin]} onCambio={([a, b]) => { setIni(a); setFin(b) }} /></div>
+          <p className="mt-1 text-xs text-slate-500">Si la hora de fin es menor que la de inicio, termina al día siguiente.</p>
+        </div>
+        {!masDetalles ? (
+          <button className="text-sm font-semibold text-marca-texto" onClick={() => setMasDetalles(true)}>+ Almuerzo/cena y descanso (opcional)</button>
+        ) : (
+          <div className="space-y-2">
+            <Horas id="agregar-comida" etiqueta={nombreComida({ comida: comida[0] || ini })} valor={comida} onCambio={setComida} />
+            <Horas id="agregar-descanso" etiqueta="Descanso" valor={descanso} onCambio={setDescanso} />
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          <button className="btn-secundario py-3" disabled={enviando} onClick={() => guardar(true)}>Guardar y otro</button>
+          <button className="btn-primario py-3" disabled={enviando} onClick={() => guardar(false)}>{enviando ? 'Guardando…' : 'Guardar'}</button>
+        </div>
+        <p className="text-xs text-slate-500">Los turnos que agregas a mano no se borran cuando se actualiza la hoja oficial.</p>
+      </div>
     </Hoja>
   )
 }
