@@ -54,9 +54,9 @@ export function BuscarCambio({ t, onCerrar, avisar, onListo }) {
     { id: 'mes', texto: 'Todo el mes', desde: inicioMes(t.fecha), hasta: finMes(t.fecha) },
     { id: 'otro', texto: 'Elegir fechas' },
   ]
-  const [rango, setRango] = useState('7')
-  const [desde, setDesde] = useState(sumarDias(t.fecha, -7))
-  const [hasta, setHasta] = useState(sumarDias(t.fecha, 7))
+  const [rango, setRango] = useState('mes')
+  const [desde, setDesde] = useState(inicioMes(t.fecha))
+  const [hasta, setHasta] = useState(finMes(t.fecha))
   const [res, setRes] = useState(null)
   const [error, setError] = useState('')
   const [elegido, setElegido] = useState(null)
@@ -136,7 +136,7 @@ export function BuscarCambio({ t, onCerrar, avisar, onListo }) {
           )}
           {res.descartadas > 0 && (
             <p className="text-center text-xs text-slate-500">
-              {res.descartadas} opción(es) ocultas porque dejarían turnos de planilla pegados o un cruce.
+              {res.descartadas} opción(es) ocultas porque a alguno de los dos le quedarían turnos cruzados, de planilla sin 12 h de descanso o más de 24 h seguidas.
             </p>
           )}
         </div>

@@ -1,7 +1,17 @@
 // Versión visible en Ajustes y notas de "Novedades" (se muestran una vez por versión)
-export const VERSION = '0.6.7'
+export const VERSION = '0.6.8'
 
 export const NOVEDADES = [
+  {
+    version: '0.6.8',
+    titulo: 'Permutas más claras',
+    puntos: [
+      'Ya no aparecen turnos del mismo día que quieres cambiar.',
+      'Planilla: 12 h de descanso entre turnos; días seguidos de día o de noche siempre se permiten.',
+      'Antes de aplicar un cambio revisamos de nuevo las reglas de las dos personas.',
+      'Buscar con quién cambiar ahora muestra todo el mes de una vez.',
+    ],
+  },
   {
     version: '0.6.7',
     titulo: 'Más avisos a tu medida',
