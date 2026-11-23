@@ -89,7 +89,9 @@ export default function Login() {
 
       {/* Portada */}
       <div className="relative z-10 mb-6 flex max-w-sm flex-col items-center text-center text-white md:mb-0 md:items-start md:text-left">
-        <img src={logo} alt="" className="levitar h-20 w-20 rounded-3xl shadow-2xl ring-4 ring-white/20 md:h-24 md:w-24" />
+        {/* /marca/192.png siempre trae el logo que eligió la administración (aunque nadie haya iniciado sesión en este celular) */}
+        <img src="/marca/192.png" onError={(e) => { if (!e.currentTarget.src.endsWith(logo)) e.currentTarget.src = logo }}
+          alt="" className="levitar h-20 w-20 rounded-3xl shadow-2xl ring-4 ring-white/20 md:h-24 md:w-24" />
         <h1 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">Chambea</h1>
         <p className="text-lg font-medium text-white/85">Gestión de turnos</p>
         <div key={frase} className="animar-entrada mt-5 hidden w-full items-start gap-3 rounded-2xl bg-white/10 p-4 text-left backdrop-blur md:flex">
