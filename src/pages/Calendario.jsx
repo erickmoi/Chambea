@@ -6,7 +6,9 @@ import { TarjetaTurno, Segmentado, momento, letraSeccion } from '../components/t
 import DeTurno from '../components/DeTurno'
 import { pausasVisibles, guardarPausasVisibles, detalleMes, guardarDetalleMes } from '../lib/tema'
 import { HojaTurno, BuscarCambio, PublicarTurno, CorregirTurno, AgregarTurno } from '../components/AccionesTurno'
-import { misTurnos, rpc, exportarIcs, exportarCsv } from '../lib/datos'
+import { misTurnos, rpc, exportarIcs, exportarCsv, nombreBonito } from '../lib/datos'
+import { esAdmin } from '../lib/auth'
+import { supabase } from '../lib/supabase'
 import { useDeslizar, claseDeslizar } from '../lib/deslizar'
 import {
   hoy, sumarDias, inicioSemana, inicioMes, finMes, sumarMeses, rangoDias,
@@ -29,6 +31,11 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
   const [error, setError] = useState('')
   const [publicados, setPublicados] = useState({})
   const [agregar, setAgregar] = useState(false)
+  // Administración: ver el horario de otra persona (null = el mío)
+  const [otra, setOtra] = useState(null)
+  const [elegirPersona, setElegirPersona] = useState(false)
+  const admin = esAdmin(cuenta)
+  const personaId = otra?.id ?? cuenta.persona_id
   const [sel, setSel] = useState(null) // turno seleccionado
   const [accion, setAccion] = useState(null) // 'buscar' | 'publicar'
   const [diaMes, setDiaMes] = useState(hoy)
@@ -53,9 +60,10 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
     setError('')
     try {
       const [r, mov] = await Promise.all([
-        misTurnos(cuenta.persona_id, desde, hasta),
-        rpc('mis_movimientos').catch(() => null),
+        misTurnos(personaId, desde, hasta, { cache: !otra }),
+        otra ? null : rpc('mis_movimientos').catch(() => null),
       ])
+      if (otra) setPublicados({})
       setDatos(r)
       if (mov) {
         const m = {}
@@ -65,7 +73,7 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
     } catch (e) {
       setError(e.message)
     }
-  }, [cuenta.persona_id, desde, hasta])
+  }, [personaId, otra, desde, hasta])
 
   useEffect(() => { cargar() }, [cargar])
 
@@ -111,13 +119,26 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
     <div ref={refDeslizar} className="mx-auto max-w-4xl space-y-3 p-4">
       {/* Barra compacta: título, navegación y filtros en dos líneas */}
       <div className="flex items-center gap-1">
-        <h1 className="mr-auto whitespace-nowrap text-lg font-bold tracking-tight text-slate-900">Mi horario</h1>
+        <h1 className="mr-auto whitespace-nowrap text-lg font-bold tracking-tight text-slate-900">{otra ? 'Horario' : 'Mi horario'}</h1>
+        {admin && (
+          <button className="boton-icono h-9 min-h-9 w-9 min-w-9 text-slate-700" onClick={() => setElegirPersona(true)} aria-label="Ver el horario de otra persona" title="Ver el horario de otra persona">
+            <Icono n="usuarios" size={18} />
+          </button>
+        )}
         <button className="boton-icono h-9 min-h-9 w-9 min-w-9 text-slate-700" onClick={() => mover(-1)} aria-label={vista === 'mes' ? 'Mes anterior' : 'Semana anterior'}><Icono n="anterior" size={18} /></button>
         <h2 className="min-w-0 truncate text-center text-sm font-semibold capitalize text-slate-900" aria-live="polite">{titulo}</h2>
         <button className="boton-icono h-9 min-h-9 w-9 min-w-9 text-slate-700" onClick={() => mover(1)} aria-label={vista === 'mes' ? 'Mes siguiente' : 'Semana siguiente'}><Icono n="siguiente" size={18} /></button>
         <button className="rounded-lg px-2 py-1.5 text-xs font-bold text-marca-texto ring-1 ring-slate-200" onClick={() => { setCursor(hoy()); setDiaMes(hoy()) }}>Hoy</button>
         <button className="boton-icono h-9 min-h-9 w-9 min-w-9 text-slate-700" onClick={() => setExportar(true)} aria-label="Exportar"><Icono n="descargar" size={18} /></button>
       </div>
+
+      {otra && (
+        <div className="animar-entrada flex items-center gap-2 rounded-xl bg-marca-claro px-3 py-2 text-sm text-marca-texto">
+          <Icono n="usuarios" size={18} />
+          <span className="min-w-0 flex-1 truncate">Viendo a <b>{nombreBonito(otra.nombre)}</b></span>
+          <button className="shrink-0 rounded-lg px-2 py-1 text-xs font-bold ring-1 ring-current" onClick={() => setOtra(null)}>Volver al mío</button>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-1.5">
         <Segmentado compacto etiqueta="Vista" valor={vista} onCambio={(v) => { setDir(0); setVista(v) }}
@@ -177,11 +198,13 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
           <Icono n="mas" size={20} />Agregar turno
         </button>
       )}
-      {agregar && <AgregarTurno fecha={vista === 'mes' ? diaMes : cursor} avisar={avisar} onCerrar={() => setAgregar(false)} onListo={cargar} />}
+      {agregar && <AgregarTurno fecha={vista === 'mes' ? diaMes : cursor} persona={otra} avisar={avisar} onCerrar={() => setAgregar(false)} onListo={cargar} />}
+      {elegirPersona && <ElegirPersona actual={otra?.id} onCerrar={() => setElegirPersona(false)}
+        onElegir={(p) => { setElegirPersona(false); setDatos(null); setOtra(p && p.id !== cuenta.persona_id ? p : null) }} />}
 
       {sel && !accion && (
         <HojaTurno t={sel} publicado={publicados[sel.id]} onCerrar={cerrarTodo}
-          onBuscar={cuenta.en_permutas === false ? undefined : () => setAccion('buscar')} onPublicar={() => setAccion('publicar')}
+          onBuscar={cuenta.en_permutas === false || otra ? undefined : () => setAccion('buscar')} onPublicar={() => setAccion('publicar')}
           textoCorregir={cuenta.agrega_turnos && sel.manual ? 'Editar o quitar este turno' : undefined}
           onVerSolicitud={(id) => { cerrarTodo(); onAbrirSolicitud(id) }}
           onDeTurno={() => { const f = sel.fecha; cerrarTodo(); setDeTurno(f) }}
@@ -355,5 +378,38 @@ function Mes({ cursor, porDia, dia, onDia, publicados, onTurno, onDeTurno, conHo
           : <div className="flex items-center gap-2 rounded-2xl border border-dashed border-slate-300 px-3 py-2.5 text-sm text-slate-600"><Icono n="cama" size={16} />Libre</div>}
       </div>
     </div>
+  )
+}
+
+// ---------------------------------------------------------------- administración: elegir de quién ver el horario
+function ElegirPersona({ actual, onCerrar, onElegir }) {
+  const [lista, setLista] = useState(null)
+  const [filtro, setFiltro] = useState('')
+  useEffect(() => {
+    supabase.from('personas').select('id, nombre, es_supervisor, referencias_planilla, gerencia').eq('activo', true).order('nombre')
+      .then(({ data }) => setLista(data || []))
+  }, [])
+  const q = filtro.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  const visibles = (lista || []).filter((p) => p.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q))
+  const grupo = (p) => (p.gerencia ? 'Gerencia' : p.es_supervisor ? 'Supervisor' : p.referencias_planilla ? 'Referencias' : null)
+  return (
+    <Hoja titulo="Ver horario de…" icono="usuarios" onCerrar={onCerrar}>
+      <input className="input mb-3" placeholder="Buscar nombre" value={filtro} onChange={(e) => setFiltro(e.target.value)} autoFocus />
+      {!lista ? <Cargando filas={4} /> : (
+        <ul className="max-h-[60vh] divide-y divide-slate-100 overflow-y-auto">
+          <li><button className="flex w-full items-center gap-2 py-2.5 text-left text-sm font-semibold text-marca-texto" onClick={() => onElegir(null)}>
+            <Icono n="inicio" size={18} />Mi horario</button></li>
+          {visibles.map((p) => (
+            <li key={p.id}>
+              <button onClick={() => onElegir(p)} className={`flex w-full items-center gap-2 py-2.5 text-left text-sm ${p.id === actual ? 'font-bold text-marca-texto' : 'text-slate-900'}`}>
+                <span className="min-w-0 flex-1 truncate">{nombreBonito(p.nombre)}</span>
+                {grupo(p) && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">{grupo(p)}</span>}
+              </button>
+            </li>
+          ))}
+          {visibles.length === 0 && <li className="py-6 text-center text-sm text-slate-500">Nadie con ese nombre.</li>}
+        </ul>
+      )}
+    </Hoja>
   )
 }

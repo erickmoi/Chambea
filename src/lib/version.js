@@ -9,6 +9,7 @@ export const NOVEDADES = [
       'Nueva categoría Gerencia médica: agrega sus turnos a mano y no participa en permutas.',
       'En planilla, referencias permuta solo con referencias, triaje con triaje y supervisor con supervisor.',
       '¿Quién está de turno? muestra a Gerencia con su etiqueta, sin sumarla al conteo de médicos.',
+      'Administración: en Horario puedes ver (y completar) el horario de cualquier persona.',
     ],
   },
   {

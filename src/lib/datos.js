@@ -14,17 +14,18 @@ const leerCache = () => {
 }
 
 // Mis turnos en un rango. Si no hay internet, devuelve lo último guardado.
-export async function misTurnos(personaId, desde, hasta) {
+export async function misTurnos(personaId, desde, hasta, { cache = true } = {}) {
   const { data, error } = await supabase.from('turnos')
     .select('id, seccion, fecha, inicio, fin, etiqueta, funcion, es_cambio, persona_original_id, comida, descanso, manual')
     .eq('persona_id', personaId).gte('fecha', desde).lte('fecha', hasta).order('inicio')
   if (error) {
     const c = leerCache()
-    if (c.personaId === personaId && c.turnos) {
+    if (cache && c.personaId === personaId && c.turnos) {
       return { turnos: c.turnos.filter((t) => t.fecha >= desde && t.fecha <= hasta), sinConexion: true }
     }
     throw new Error(mensajeError(error))
   }
+  if (!cache) return { turnos: data }
   try {
     const c = leerCache()
     const otros = c.personaId === personaId ? (c.turnos || []).filter((t) => t.fecha < desde || t.fecha > hasta) : []

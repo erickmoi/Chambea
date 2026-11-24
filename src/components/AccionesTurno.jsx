@@ -359,7 +359,7 @@ const HORARIOS_RAPIDOS = [
   { id: '19:00-23:00', texto: '7–11 PM' }, { id: '18:00-22:00', texto: '6–10 PM' },
 ]
 
-export function AgregarTurno({ fecha: fechaInicial, onCerrar, avisar, onListo }) {
+export function AgregarTurno({ fecha: fechaInicial, onCerrar, avisar, onListo, persona }) {
   const [seccion, setSeccion] = useState(() => { try { return localStorage.getItem('chambea.agregar.seccion') || 'planilla' } catch { return 'planilla' } })
   const [fecha, setFecha] = useState(fechaInicial && fechaInicial >= hoy() ? fechaInicial : hoy())
   const [ini, setIni] = useState('07:00')
@@ -377,7 +377,7 @@ export function AgregarTurno({ fecha: fechaInicial, onCerrar, avisar, onListo })
     setEnviando(true)
     try {
       await rpc('agregar_turno', { p_seccion: seccion, p_fecha: fecha, p_inicio: ini, p_fin: fin,
-        p_comida: pausa(comida) || null, p_descanso: pausa(descanso) || null })
+        p_comida: pausa(comida) || null, p_descanso: pausa(descanso) || null, p_persona_id: persona?.id ?? null })
       try { localStorage.setItem('chambea.agregar.seccion', seccion) } catch { /* nada */ }
       vibrar()
       avisar(`Turno del ${fechaCorta(fecha)} agregado`)
@@ -389,6 +389,7 @@ export function AgregarTurno({ fecha: fechaInicial, onCerrar, avisar, onListo })
   return (
     <Hoja titulo="Agregar turno" icono="mas" onCerrar={onCerrar}>
       <div className="space-y-4">
+        {persona && <p className="rounded-xl bg-marca-claro p-2.5 text-sm text-marca-texto">Para <b>{nombreBonito(persona.nombre)}</b></p>}
         <Segmentado etiqueta="Sección" valor={seccion} onCambio={setSeccion} opciones={[
           { id: 'planilla', texto: 'Planilla' }, { id: 'sp', texto: 'Servicios Profesionales' },
         ]} />
