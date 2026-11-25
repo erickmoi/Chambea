@@ -151,10 +151,15 @@ function leerSP(data) {
     const nombre = texto(data[i][0])
     const n = normalizar(nombre)
     if (!nombre || ETIQUETAS_SP.has(n) || leerHorario(nombre)) continue
-    if (etiqueta(i + 1) !== 'COMIDA') continue // un nombre siempre va seguido de COMIDA
+    // Bloque del médico: desde su nombre hasta el siguiente nombre (sirve con 4 o 6 filas y sin etiquetas)
+    let fin = i + 1
+    while (fin < data.length && (!texto(data[fin]?.[0]) || ETIQUETAS_SP.has(etiqueta(fin)))) fin++
+    if (!data.slice(i + 1, fin).some((_x, k) => etiqueta(i + 1 + k) === 'COMIDA')) continue // no es un médico
     const filas = [i]
-    // Segunda fila (turno de la noche): con etiqueta TURNO NOCTURNO, o sin etiqueta pero seguida de su COMIDA
-    if (etiqueta(i + 3) === 'TURNO NOCTURNO' || (!texto(data[i + 3]?.[0]) && etiqueta(i + 4) === 'COMIDA')) filas.push(i + 3)
+    for (let r = i + 1; r < fin; r++) {
+      const e = etiqueta(r)
+      if (e !== 'COMIDA' && e !== 'DESCANSO' && data[r].some((v) => leerHorario(v))) filas.push(r)
+    }
     for (const r of filas) {
       for (const { col, fecha } of dias) {
         const v = data[r][col]
@@ -163,9 +168,11 @@ function leerSP(data) {
           if (!RE_SIN_TURNO.test(texto(v))) raros.push({ nombre, fecha, valor: texto(v) })
           continue
         }
-        const notas = `${texto(data[r + 1]?.[col])} ${texto(data[r + 2]?.[col])}`
+        const com = etiqueta(r + 1) === 'COMIDA' ? data[r + 1]?.[col] : null
+        const des = etiqueta(r + 2) === 'DESCANSO' ? data[r + 2]?.[col] : etiqueta(r + 1) === 'DESCANSO' ? data[r + 1]?.[col] : null
+        const notas = `${texto(com)} ${texto(des)}`
         turnos.push(conObs(armarTurno(nombre, fecha, horario, RE_REFERENCIAS.test(notas) ? 'referencias' : 'general', false,
-          leerPausa(data[r + 1]?.[col]), leerPausa(data[r + 2]?.[col])), data[r + 1]?.[col], data[r + 2]?.[col], v))
+          leerPausa(com), leerPausa(des)), com, des, v))
       }
     }
   }
