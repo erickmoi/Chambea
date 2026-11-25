@@ -53,6 +53,20 @@ export function leerPausa(valor) {
   return `${hm(mejor.ini)}–${hm(fin)}`
 }
 
+// Solo estas marcas se muestran (otras notas como SUPERVISOR o REFUERZO no)
+const RE_OBSERVACION = /PERMUTA|PERMISO|CAMBIO DE TURNO|INCAPACIDAD|COMPENSATORIO/i
+// Observación escrita en las filas de notas (PERMUTA, PERMISO PERSONAL…): no es pausa ni referencias
+export function leerObservacion(...celdas) {
+  for (const c of celdas) {
+    const t = texto(c)
+    if (!t || leerPausa(t) || leerHorario(t) || !RE_OBSERVACION.test(t)) continue
+    const s = t.slice(0, 40).toLowerCase()
+    return s.charAt(0).toUpperCase() + s.slice(1)
+  }
+  return null
+}
+const conObs = (t, a, b) => ({ ...t, observacion: leerObservacion(a, b) })
+
 function armarTurno(nombre, fecha, horario, funcion, supervisor, comida = null, descanso = null) {
   const fechaFin = horario.hf <= horario.hi ? sumarDia(fecha) : fecha
   return {
@@ -114,8 +128,8 @@ function leerPlanilla(data) {
       }
       const notas = `${texto(data[i + 1]?.[col])} ${texto(data[i + 2]?.[col])}`
       const funcion = supervisor ? 'supervisor' : RE_REFERENCIAS.test(notas) ? 'referencias' : 'triaje'
-      turnos.push(armarTurno(nombre, fecha, horario, funcion, supervisor,
-        leerPausa(data[i + 1]?.[col]), leerPausa(data[i + 2]?.[col])))
+      turnos.push(conObs(armarTurno(nombre, fecha, horario, funcion, supervisor,
+        leerPausa(data[i + 1]?.[col]), leerPausa(data[i + 2]?.[col])), data[i + 1]?.[col], data[i + 2]?.[col]))
     }
   }
   return { turnos, raros, dias: dias.map((d) => d.fecha) }
@@ -146,8 +160,8 @@ function leerSP(data) {
           continue
         }
         const notas = `${texto(data[r + 1]?.[col])} ${texto(data[r + 2]?.[col])}`
-        turnos.push(armarTurno(nombre, fecha, horario, RE_REFERENCIAS.test(notas) ? 'referencias' : 'general', false,
-          leerPausa(data[r + 1]?.[col]), leerPausa(data[r + 2]?.[col])))
+        turnos.push(conObs(armarTurno(nombre, fecha, horario, RE_REFERENCIAS.test(notas) ? 'referencias' : 'general', false,
+          leerPausa(data[r + 1]?.[col]), leerPausa(data[r + 2]?.[col])), data[r + 1]?.[col], data[r + 2]?.[col]))
       }
     }
   }

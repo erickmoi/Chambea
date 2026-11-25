@@ -36,13 +36,24 @@ export function Pausas({ t, className = '' }) {
 }
 
 // Tarjeta "boleto": talón con día/noche y P/S, hora grande, sección, función y si viene de un cambio
+// Observación que viene escrita en la hoja debajo del horario (Permuta, Permiso personal…)
+export function ChipObservacion({ texto, chico = false }) {
+  if (!texto) return null
+  const permiso = /permiso|incapacidad/i.test(texto)
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full font-semibold ${chico ? 'px-1.5 py-px text-[10px]' : 'px-2 py-0.5 text-xs'} ${permiso ? 'bg-violet-100 text-violet-800' : 'bg-amber-100 text-amber-900'}`}>
+      <Icono n={permiso ? 'historial' : 'cambio'} size={chico ? 11 : 13} />{texto}
+    </span>
+  )
+}
+
 export function TarjetaTurno({ t, onClick, extra, conFecha = false, publicado = false, conPausas = false }) {
   const Tag = onClick ? 'button' : 'div'
   const m = momento(t)
   const sp = t.seccion === 'sp'
   return (
     <Tag onClick={onClick}
-      aria-label={onClick ? `${conFecha ? fechaCorta(t.fecha) + ', ' : ''}${horario(t.etiqueta)}, ${SECCION[t.seccion]}, ${m.texto}` : undefined}
+      aria-label={onClick ? `${conFecha ? fechaCorta(t.fecha) + ', ' : ''}${horario(t.etiqueta)}, ${SECCION[t.seccion]}, ${m.texto}${t.observacion ? ', ' + t.observacion : ''}` : undefined}
       className={`boleto flex w-full items-stretch text-left transition ${onClick ? 'active:scale-[0.98] hover:ring-slate-300' : ''}`}>
       <span className={`boleto-talon flex w-14 shrink-0 flex-col items-center justify-center gap-0.5 ${sp ? 'bg-sp-claro text-sp' : 'bg-planilla-claro text-planilla'} ${m.corto ? 'talon-corto' : ''}`}>
         <Icono n={m.icono} size={22} />
@@ -54,6 +65,7 @@ export function TarjetaTurno({ t, onClick, extra, conFecha = false, publicado = 
         <span className="mt-1 flex flex-wrap items-center gap-1.5">
           <ChipSeccion seccion={t.seccion} />
           <ChipFuncion funcion={t.funcion} />
+          <ChipObservacion texto={t.observacion} />
           <span className="text-xs text-slate-600">{horas(t)} h · {m.texto.toLowerCase()}</span>
           {publicado && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">En Permutas</span>}
         </span>

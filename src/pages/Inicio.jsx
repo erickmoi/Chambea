@@ -176,7 +176,7 @@ export default function Inicio({ cuenta, avisar, onAbrirSolicitud, onIr, recarga
       )}
       {sel && accion === 'buscar' && <BuscarCambio t={sel} avisar={avisar} onCerrar={cerrarTodo} onListo={() => { cerrarTodo(); cargar() }} />}
       {sel && accion === 'publicar' && <PublicarTurno t={sel} avisar={avisar} onCerrar={cerrarTodo} onListo={cargar} />}
-      {sel && accion === 'corregir' && <CorregirTurno t={sel} avisar={avisar} onCerrar={cerrarTodo} onListo={() => { cerrarTodo(); cargar() }} />}
+      {sel && accion === 'corregir' && <CorregirTurno t={sel} puedeQuitar={!!sel.manual || ['admin', 'superadmin'].includes(cuenta.rol)} avisar={avisar} onCerrar={cerrarTodo} onListo={() => { cerrarTodo(); cargar() }} />}
       {deTurno && <DeTurno fecha={deTurno} miPersona={cuenta.persona_id} onCerrar={() => setDeTurno(null)} />}
     </div>
   )

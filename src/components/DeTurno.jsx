@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Icono from './Icono'
 import { Hoja, Cargando } from './ui'
-import { Segmentado, ChipFuncion, momento } from './turnos'
+import { Segmentado, ChipFuncion, ChipObservacion, momento } from './turnos'
 import { turnosDelDia, nombreBonito } from '../lib/datos'
 import { fechaCorta, horario, sumarDias, hoy } from '../lib/fechas'
 
@@ -79,6 +79,7 @@ export default function DeTurno({ fecha: inicial = hoy(), miPersona, onCerrar })
                       {p.persona?.gerencia
                         ? <span className="rounded-full bg-marca-claro px-2 py-0.5 text-xs font-semibold text-marca-texto">Gerencia</span>
                         : <ChipFuncion funcion={p.funcion} />}
+                      <ChipObservacion texto={p.observacion} chico />
                       {p.es_cambio && <Icono n="repetir" size={16} className="text-marca-texto" title="Cambio hecho en Chambea" />}
                     </li>
                   ))}

@@ -310,7 +310,7 @@ function Horas({ id, valor, onCambio, etiqueta }) {
   )
 }
 
-export function CorregirTurno({ t, onCerrar, avisar, onListo }) {
+export function CorregirTurno({ t, onCerrar, avisar, onListo, puedeQuitar = true }) {
   const [ini, setIni] = useState(aHora(t.etiqueta.split(/[–-]/)[0]))
   const [fin, setFin] = useState(aHora(t.etiqueta.split(/[–-]/)[1]))
   const [comida, setComida] = useState(partesPausa(t.comida))
@@ -346,7 +346,11 @@ export function CorregirTurno({ t, onCerrar, avisar, onListo }) {
         <Horas id="descanso" etiqueta="Descanso" valor={descanso} onCambio={setDescanso} />
       </div>
       <button className="btn-primario mt-5 w-full py-3" disabled={enviando} onClick={guardar}>{enviando ? 'Guardando…' : 'Guardar corrección'}</button>
-      <button className="mt-2 w-full rounded-xl py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50" disabled={enviando} onClick={quitar}>No tengo este turno · Quitarlo</button>
+      {puedeQuitar ? (
+        <button className="mt-2 w-full rounded-xl py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50" disabled={enviando} onClick={quitar}>No tengo este turno · Quitarlo</button>
+      ) : (
+        <p className="mt-3 text-center text-xs text-slate-500">Este turno viene de la hoja oficial. Si no te corresponde, avisa a la administración para corregirlo allá.</p>
+      )}
     </Hoja>
   )
 }

@@ -1,16 +1,16 @@
 // Versión visible en Ajustes y notas de "Novedades" (se muestran una vez por versión)
 // Un punto puede ser texto (para todos) o { texto, admin: true } (solo lo ve la administración).
 // Una versión sin puntos para alguien no se le muestra.
-export const VERSION = '0.7.0'
+export const VERSION = '0.7.1'
 
 export const NOVEDADES = [
   {
     version: '0.7.0',
     titulo: 'Avisos más seguros',
     puntos: [
-      'Los avisos al teléfono ahora se reintentan solos si no llegan a la primera.',
-      'Al abrir Chambea se renueva tu registro de avisos, para que no se pierdan.',
-      'Si todavía no los tienes, actívalos en Cuenta → Notificaciones (en iPhone, primero agrega Chambea a inicio).',
+      { admin: true, texto: 'Los avisos al teléfono ahora se reintentan solos si no llegan a la primera.' },
+      { admin: true, texto: 'Al abrir Chambea se renueva tu registro de avisos, para que no se pierdan.' },
+      { admin: true, texto: 'Si todavía no los tienes, actívalos en Cuenta → Notificaciones (en iPhone, primero agrega Chambea a inicio).' },
       { admin: true, texto: 'Panel: actividad (en línea, entradas por día, última vez de cada persona) y quién no tiene avisos, con recordatorio por WhatsApp.' },
       { admin: true, texto: 'Panel: revisión automática de salud cada hora, con reparación de lo que se puede arreglar solo.' },
     ],
