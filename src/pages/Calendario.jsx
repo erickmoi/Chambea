@@ -190,7 +190,8 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
         <span className="flex items-center gap-1"><span className="turno-corto inline-flex items-center rounded px-1 text-sp"><Icono n="tarde" size={14} /></span>Tarde (turno corto)</span>
         <span className="flex items-center gap-1"><span className="turno-corto inline-flex items-center rounded px-1 text-planilla"><Icono n="manana" size={14} /></span>Mañana (turno corto)</span>
         <span className="flex items-center gap-1"><Icono n="repetir" size={14} className="text-marca-texto" />Cambio hecho en Chambea</span>
-        <span className="flex items-center gap-1"><span className="rounded bg-slate-100 px-1 text-slate-400 line-through">P</span>Ya no lo trabajas (permuta o permiso en la hoja)</span>
+        <span className="flex items-center gap-1"><span className="rounded bg-slate-100 px-1 text-slate-400 line-through">P</span>Ya no lo trabajas (permuta dada o permiso)</span>
+        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-marca" />Permuta recibida (sí lo trabajas)</span>
       </div>
 
       {cuenta.agrega_turnos && (
@@ -320,7 +321,7 @@ function Semana({ semana, porDia, onTurno }) {
                   <span className="mono block text-[10px] font-semibold leading-tight sm:text-xs">{a}</span>
                   <span className="mono block text-[10px] leading-tight opacity-80 sm:text-xs">{b}</span>
                   {t.es_cambio && <Icono n="repetir" size={12} className="mt-0.5" />}
-                  {t.observacion && <span className="mt-0.5 text-[9px] font-bold uppercase leading-none">{t.observacion.split(' ')[0]}</span>}
+                  {t.observacion && <span className="mt-0.5 text-[9px] font-bold uppercase leading-none">{t.anulado ? t.observacion.split(' ')[0] : 'Recibida'}</span>}
                 </button>
               )
             })}
@@ -359,7 +360,7 @@ function Mes({ cursor, porDia, dia, onDia, publicados, onTurno, onDeTurno, conHo
                     <span key={t.id} className={`flex w-full flex-col items-center rounded-md py-px text-[10px] font-bold leading-tight ${elegido ? 'bg-white/20' : t.anulado ? 'bg-slate-100 text-slate-400 line-through' : t.seccion === 'sp' ? 'bg-sp-claro text-sp' : 'bg-planilla-claro text-planilla'} ${m.corto && !t.anulado ? 'turno-corto' : ''}`}>
                       <span className="flex items-center gap-0.5"><Icono n={m.icono} size={11} />{letraSeccion(t.seccion)}</span>
                       {conHora && <span className="mono text-[9px] font-semibold tracking-tighter">{horaCorta(t.etiqueta)}</span>}
-                      {t.observacion && <span className={`mt-px h-1.5 w-1.5 rounded-full ${/permiso|incapacidad/i.test(t.observacion) ? 'bg-violet-500' : 'bg-amber-500'}`} title={t.observacion} />}
+                      {t.observacion && !t.anulado && <span className="mt-px h-1.5 w-1.5 rounded-full bg-marca" title={t.observacion} />}
                     </span>
                   )
                 })}

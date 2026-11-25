@@ -63,7 +63,10 @@ function leerObservacion(...celdas: any[]) {
   }
   return null
 }
-const conObs = (t: any, a: any, b: any) => ({ ...t, observacion: leerObservacion(a, b) })
+// Turno RECIBIDO por permuta: la hoja lo escribe 'P - 06:00am-06:00pm' (fondo gris). Sí se trabaja.
+const RE_RECIBIDO = /^\s*P\s*[-–]/i
+const conObs = (t: any, a: any, b: any, celda: any = null) =>
+  ({ ...t, observacion: RE_RECIBIDO.test(texto(celda)) ? 'Permuta recibida' : leerObservacion(a, b) })
 
 function armarTurno(nombre: any, fecha: any, horario: any, funcion: any, supervisor: any, comida: any = null, descanso: any = null) {
   const fechaFin = horario.hf <= horario.hi ? sumarDia(fecha) : fecha
@@ -121,13 +124,13 @@ function leerPlanilla(data: any[][]) {
       }
       if (simple) {
         // Sin notas: la función (supervisor) la decide la base según la persona
-        turnos.push(armarTurno(nombre, fecha, horario, 'triaje', false))
+        turnos.push(conObs(armarTurno(nombre, fecha, horario, 'triaje', false), null, null, f[col]))
         continue
       }
       const notas = `${texto(data[i + 1]?.[col])} ${texto(data[i + 2]?.[col])}`
       const funcion = supervisor ? 'supervisor' : RE_REFERENCIAS.test(notas) ? 'referencias' : 'triaje'
       turnos.push(conObs(armarTurno(nombre, fecha, horario, funcion, supervisor,
-        leerPausa(data[i + 1]?.[col]), leerPausa(data[i + 2]?.[col])), data[i + 1]?.[col], data[i + 2]?.[col]))
+        leerPausa(data[i + 1]?.[col]), leerPausa(data[i + 2]?.[col])), data[i + 1]?.[col], data[i + 2]?.[col], f[col]))
     }
   }
   return { turnos, raros, dias: dias.map((d) => d.fecha) }
@@ -159,7 +162,7 @@ function leerSP(data: any[][]) {
         }
         const notas = `${texto(data[r + 1]?.[col])} ${texto(data[r + 2]?.[col])}`
         turnos.push(conObs(armarTurno(nombre, fecha, horario, RE_REFERENCIAS.test(notas) ? 'referencias' : 'general', false,
-          leerPausa(data[r + 1]?.[col]), leerPausa(data[r + 2]?.[col])), data[r + 1]?.[col], data[r + 2]?.[col]))
+          leerPausa(data[r + 1]?.[col]), leerPausa(data[r + 2]?.[col])), data[r + 1]?.[col], data[r + 2]?.[col], v))
       }
     }
   }

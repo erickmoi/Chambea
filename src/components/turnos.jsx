@@ -40,8 +40,9 @@ export function Pausas({ t, className = '' }) {
 export function ChipObservacion({ texto, chico = false, anulado = false }) {
   if (!texto) return null
   const permiso = /permiso|incapacidad/i.test(texto)
+  const recibida = /recibid/i.test(texto)
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full font-semibold ${chico ? 'px-1.5 py-px text-[10px]' : 'px-2 py-0.5 text-xs'} ${permiso ? 'bg-violet-100 text-violet-800' : 'bg-amber-100 text-amber-900'}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full font-semibold ${chico ? 'px-1.5 py-px text-[10px]' : 'px-2 py-0.5 text-xs'} ${recibida ? 'bg-marca-claro text-marca-texto' : permiso ? 'bg-violet-100 text-violet-800' : 'bg-amber-100 text-amber-900'}`}>
       <Icono n={permiso ? 'historial' : 'cambio'} size={chico ? 11 : 13} />{texto}{anulado ? ' · ya no lo trabajas' : ''}
     </span>
   )
