@@ -1,15 +1,28 @@
 // Versión visible en Ajustes y notas de "Novedades" (se muestran una vez por versión)
-export const VERSION = '0.6.9'
+// Un punto puede ser texto (para todos) o { texto, admin: true } (solo lo ve la administración).
+// Una versión sin puntos para alguien no se le muestra.
+export const VERSION = '0.7.0'
 
 export const NOVEDADES = [
+  {
+    version: '0.7.0',
+    titulo: 'Avisos más seguros',
+    puntos: [
+      'Los avisos al teléfono ahora se reintentan solos si no llegan a la primera.',
+      'Al abrir Chambea se renueva tu registro de avisos, para que no se pierdan.',
+      'Si todavía no los tienes, actívalos en Cuenta → Notificaciones (en iPhone, primero agrega Chambea a inicio).',
+      { admin: true, texto: 'Panel: actividad (en línea, entradas por día, última vez de cada persona) y quién no tiene avisos, con recordatorio por WhatsApp.' },
+      { admin: true, texto: 'Panel: revisión automática de salud cada hora, con reparación de lo que se puede arreglar solo.' },
+    ],
+  },
   {
     version: '0.6.9',
     titulo: 'Gerencia médica y grupos',
     puntos: [
-      'Nueva categoría Gerencia médica: agrega sus turnos a mano y no participa en permutas.',
+      { admin: true, texto: 'Nueva categoría Gerencia médica: agrega sus turnos a mano y no participa en permutas.' },
       'En planilla, referencias permuta solo con referencias, triaje con triaje y supervisor con supervisor.',
       '¿Quién está de turno? muestra a Gerencia con su etiqueta, sin sumarla al conteo de médicos.',
-      'Administración: en Horario puedes ver (y completar) el horario de cualquier persona.',
+      { admin: true, texto: 'En Horario puedes ver (y completar) el horario de cualquier persona.' },
     ],
   },
   {
@@ -133,11 +146,15 @@ const mayor = (a, b) => {
   return false
 }
 // Solo las versiones que esta persona todavía no ha visto
-export const novedadesPendientes = () => {
+// Filtra los puntos solo para administración
+export const paraCuenta = (lista, admin = false) => lista
+  .map((n) => ({ ...n, puntos: n.puntos.filter((p) => admin || typeof p === 'string' || !p.admin).map((p) => (typeof p === 'string' ? p : p.texto)) }))
+  .filter((n) => n.puntos.length > 0)
+export const novedadesPendientes = (admin = false) => {
   const vista = leerVista()
-  return vista ? NOVEDADES.filter((n) => mayor(n.version, vista)) : []
+  return vista ? paraCuenta(NOVEDADES.filter((n) => mayor(n.version, vista)), admin) : []
 }
-export const hayNovedades = () => novedadesPendientes().length > 0
+export const hayNovedades = (admin = false) => novedadesPendientes(admin).length > 0
 // La primera vez (cuenta nueva o celular nuevo) no se muestra el historial: solo se marca como visto
 export const primeraVez = () => leerVista() == null
 export function marcarNovedadesVistas() {

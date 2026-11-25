@@ -18,7 +18,8 @@ import { useActualizacion, actualizarAhora } from './lib/actualizacion'
 import { pantallaInicial } from './lib/tema'
 import { aplicarLogo, logoGuardado, useLogo } from './lib/logo'
 import { supabase } from './lib/supabase'
-import { NOVEDADES, novedadesPendientes, hayNovedades, marcarNovedadesVistas, primeraVez } from './lib/version'
+import { VERSION, NOVEDADES, novedadesPendientes, hayNovedades, marcarNovedadesVistas, primeraVez, paraCuenta } from './lib/version'
+import { refrescarPush } from './lib/push'
 
 const Admin = lazy(() => import('./pages/admin/Admin.jsx'))
 
@@ -56,6 +57,22 @@ export default function App() {
     alNuevoAviso.current = () => { cargarPendientes(); setRecarga((n) => n + 1) }
   }, [cargarPendientes])
 
+  // Actividad: "latido" al abrir y cada minuto mientras la app está visible (para el panel de administración)
+  useEffect(() => {
+    if (!listo) return
+    const instalada = window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true
+    const latir = (abrir = false) => {
+      if (document.visibilityState !== 'visible') return
+      supabase.rpc('latido', { p_version: VERSION, p_instalada: instalada, p_abrir: abrir }).then(() => {}, () => {})
+    }
+    latir(true)
+    refrescarPush()
+    const t = setInterval(() => latir(false), 60000)
+    const alVolver = () => { if (document.visibilityState === 'visible') latir(true) }
+    document.addEventListener('visibilitychange', alVolver)
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', alVolver) }
+  }, [listo])
+
   const avisar = useCallback((texto, tipo = 'ok') => setAviso({ texto, tipo }), [])
   const cerrarAviso = useCallback(() => setAviso(null), [])
 
@@ -88,7 +105,7 @@ export default function App() {
     if (!listo || !cuenta?.telefono) return
     if (primeraVez()) marcarNovedadesVistas()
     if (!recorridoVisto()) setRecorrido(true)
-    else if (hayNovedades()) setNovedades('nuevas')
+    else if (hayNovedades(esAdmin(cuenta))) setNovedades('nuevas')
   }, [listo, cuenta?.telefono])
 
   if (cargando) return <div className="mx-auto max-w-lg p-6"><Cargando /></div>
@@ -195,11 +212,11 @@ export default function App() {
       {solicitud && (
         <Solicitud id={solicitud} cuenta={cuenta} avisar={avisar} onCambio={alCambiar} onCerrar={() => setSolicitud(null)} />
       )}
-      {recorrido && <Recorrido onCerrar={() => { setRecorrido(false); if (hayNovedades()) setNovedades('nuevas') }} />}
+      {recorrido && <Recorrido onCerrar={() => { setRecorrido(false); if (hayNovedades(admin)) setNovedades('nuevas') }} />}
       {verAvisos && <HojaNotificaciones lista={lista} recargar={recargarAvisos} onIr={irA} onCerrar={() => setVerAvisos(false)} />}
       {novedades && (
         <Hoja titulo="Novedades" icono="novedades" onCerrar={() => { marcarNovedadesVistas(); setNovedades(false) }}>
-          {(novedades === 'nuevas' ? novedadesPendientes() : NOVEDADES).map((n) => (
+          {(novedades === 'nuevas' ? novedadesPendientes(admin) : paraCuenta(NOVEDADES, admin)).map((n) => (
             <div key={n.version} className="mb-4">
               <p className="font-semibold text-slate-900">{n.titulo} <span className="mono text-xs text-slate-500">v{n.version}</span></p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">{n.puntos.map((p) => <li key={p}>{p}</li>)}</ul>

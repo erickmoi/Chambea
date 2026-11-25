@@ -39,5 +39,8 @@ export function msgGrupo(tipo, t, fechas = [], url) {
 }
 
 // Invitar a alguien a Chambea
+export const msgActivarAvisos = (persona, url) =>
+  `${hola(persona)}\n\nTe escribo porque en Chambea todavía no tienes los avisos activados 🔔 y te estás perdiendo los recordatorios de GeoVictoria, inicio de turno, salida y permutas.\n\nSe activan así:\n1️⃣ Abre Chambea${url ? ` (${url})` : ''}\n2️⃣ Ve a Cuenta → Notificaciones → Activar\n\n📱 Si tienes iPhone: primero toca Compartir → "Agregar a inicio" y abre Chambea desde ese ícono; después activa los avisos.\n\n¡Gracias! 🙌`
+
 export const msgInvitar = (persona, url) =>
   `${hola(persona)}\n\nYa estamos usando Chambea para las permutas de turno: ves tu horario, tus horas de comida y descanso, y cambias turnos sin perder nada en el chat. 🙌\n\nRegístrate aquí con tu nombre como sale en el horario:\n${url}`

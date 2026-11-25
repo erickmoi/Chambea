@@ -64,3 +64,16 @@ export async function probarPush() {
   const { error } = await supabase.functions.invoke('push', { body: { accion: 'prueba' } })
   if (error) throw new Error('No se pudo enviar la prueba.')
 }
+
+// Al abrir la app: si ya dio permiso, renueva y vuelve a guardar la suscripción en silencio.
+// Repara dispositivos cuya suscripción cambió o se borró (el navegador a veces la renueva sola).
+export async function refrescarPush() {
+  try {
+    if (!pushSoportado() || Notification.permission !== 'granted') return
+    const reg = await navigator.serviceWorker.ready
+    const sub = (await reg.pushManager.getSubscription()) ??
+      (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: aBytes(VAPID) }))
+    const j = sub.toJSON()
+    await supabase.rpc('guardar_suscripcion', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth })
+  } catch { /* sin conexión o sin permiso: se intenta la próxima vez */ }
+}
