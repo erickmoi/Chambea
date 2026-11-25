@@ -1,8 +1,10 @@
 // Administración en una sola pestaña: Panel · Usuarios · Cargar horario · Ajustes generales
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import Icono from '../../components/Icono'
 import { Aviso, Cargando } from '../../components/ui'
 import { Segmentado } from '../../components/turnos'
+import { lazySeguro } from '../../lib/cargaSegura'
+import Fallo from '../../components/Fallo'
 import { AjustesAdmin } from '../MiCuenta.jsx'
 import { rpc, enlaceWhatsApp, enlaceWaA, nombreBonito } from '../../lib/datos'
 import { supabase } from '../../lib/supabase'
@@ -10,8 +12,8 @@ import { msgInvitar, msgActivarAvisos } from '../../lib/mensajes'
 import { VERSION } from '../../lib/version'
 import { hoy, sumarDias, fechaCorta, finMes, numDia, haceCuanto } from '../../lib/fechas'
 
-const Usuarios = lazy(() => import('./Usuarios.jsx'))
-const Importar = lazy(() => import('./Importar.jsx'))
+const Usuarios = lazySeguro(() => import('./Usuarios.jsx'))
+const Importar = lazySeguro(() => import('./Importar.jsx'))
 
 const SECCIONES = [
   { id: 'panel', texto: 'Panel', icono: 'grafica' },
@@ -37,12 +39,14 @@ export default function Admin({ inicial }) {
       <p className="-mt-2 text-center text-sm font-semibold text-slate-700 sm:hidden">{SECCIONES.find((s) => s.id === sec)?.texto}</p>
 
       <div key={sec} className="animar-entrada">
+        <Fallo key={sec}>
         <Suspense fallback={<Cargando />}>
           {sec === 'panel' && <Panel irA={setSec} />}
           {sec === 'usuarios' && <Usuarios />}
           {sec === 'cargar' && <Importar />}
           {sec === 'ajustes' && <AjustesAdmin avisar={(texto, tipo = 'ok') => setAviso({ texto, tipo })} />}
         </Suspense>
+        </Fallo>
       </div>
     </div>
   )

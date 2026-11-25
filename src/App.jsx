@@ -1,5 +1,5 @@
 // Armazón: navegación inferior (celular) o lateral (PC), campanita, enlaces directos y novedades
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth, esAdmin } from './lib/auth'
 import Login from './pages/Login.jsx'
 import Pendiente from './pages/Pendiente.jsx'
@@ -18,10 +18,12 @@ import { useActualizacion, actualizarAhora } from './lib/actualizacion'
 import { pantallaInicial } from './lib/tema'
 import { aplicarLogo, logoGuardado, useLogo } from './lib/logo'
 import { supabase } from './lib/supabase'
+import { lazySeguro } from './lib/cargaSegura'
+import Fallo from './components/Fallo'
 import { VERSION, NOVEDADES, novedadesPendientes, hayNovedades, marcarNovedadesVistas, primeraVez, paraCuenta } from './lib/version'
 import { refrescarPush } from './lib/push'
 
-const Admin = lazy(() => import('./pages/admin/Admin.jsx'))
+const Admin = lazySeguro(() => import('./pages/admin/Admin.jsx'))
 
 const VISTAS = ['inicio', 'horario', 'bolsa', 'admin', 'cuenta']
 // Enlaces viejos (?vista=usuarios / importar) llevan a Administración
@@ -180,6 +182,7 @@ export default function App() {
       )}
 
       <main id="contenido" key={actual} className="animar-entrada">
+        <Fallo key={vista}>
         <Suspense fallback={<div className="mx-auto max-w-lg p-6"><Cargando /></div>}>
           {actual === 'inicio' && <Inicio cuenta={cuenta} avisar={avisar} onAbrirSolicitud={setSolicitud} onIr={ir} recarga={recarga} />}
           {actual === 'horario' && <Calendario cuenta={cuenta} avisar={avisar} onAbrirSolicitud={setSolicitud} verResumen={verResumen} />}
@@ -187,6 +190,7 @@ export default function App() {
           {actual === 'admin' && <Admin inicial={adminInicial} />}
           {actual === 'cuenta' && <MiCuenta onNovedades={() => setNovedades(true)} onRecorrido={() => setRecorrido(true)} onIr={ir} />}
         </Suspense>
+        </Fallo>
       </main>
 
       {/* Navegación inferior en el celular */}
