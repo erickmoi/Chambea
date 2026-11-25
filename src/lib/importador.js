@@ -153,7 +153,8 @@ function leerSP(data) {
     if (!nombre || ETIQUETAS_SP.has(n) || leerHorario(nombre)) continue
     if (etiqueta(i + 1) !== 'COMIDA') continue // un nombre siempre va seguido de COMIDA
     const filas = [i]
-    if (etiqueta(i + 3) === 'TURNO NOCTURNO') filas.push(i + 3)
+    // Segunda fila (turno de la noche): con etiqueta TURNO NOCTURNO, o sin etiqueta pero seguida de su COMIDA
+    if (etiqueta(i + 3) === 'TURNO NOCTURNO' || (!texto(data[i + 3]?.[0]) && etiqueta(i + 4) === 'COMIDA')) filas.push(i + 3)
     for (const r of filas) {
       for (const { col, fecha } of dias) {
         const v = data[r][col]

@@ -354,7 +354,7 @@ function Mes({ cursor, porDia, dia, onDia, publicados, onTurno, onDeTurno, conHo
                 aria-label={`${fechaCorta(d)}: ${lista.length ? lista.map((t) => `${t.seccion === 'sp' ? 'Servicios Profesionales' : 'Planilla'} ${horario(t.etiqueta)}`).join(', ') : 'libre'}`}
                 className={`flex min-h-16 flex-col items-center gap-0.5 rounded-xl p-1 transition active:scale-95 ${elegido ? 'bg-marca text-sobre-marca shadow' : d === hoy() ? 'bg-marca-claro ring-2 ring-marca' : 'bg-superficie ring-1 ring-slate-200'} ${fuera ? 'opacity-40' : ''}`}>
                 <span className="mono text-sm font-semibold">{numDia(d)}</span>
-                {lista.slice(0, 2).map((t) => {
+                {lista.slice(0, 3).map((t) => {
                   const m = momento(t)
                   return (
                     <span key={t.id} className={`flex w-full flex-col items-center rounded-md py-px text-[10px] font-bold leading-tight ${elegido ? 'bg-white/20' : t.anulado ? 'bg-slate-100 text-slate-400 line-through' : t.seccion === 'sp' ? 'bg-sp-claro text-sp' : 'bg-planilla-claro text-planilla'} ${m.corto && !t.anulado ? 'turno-corto' : ''}`}>
@@ -364,7 +364,7 @@ function Mes({ cursor, porDia, dia, onDia, publicados, onTurno, onDeTurno, conHo
                     </span>
                   )
                 })}
-                {lista.length > 2 && <span className="text-[10px] font-bold">+{lista.length - 2}</span>}
+                {lista.length > 3 && <span className="text-[10px] font-bold">+{lista.length - 3}</span>}
               </button>
             )
           })}
