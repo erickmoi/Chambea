@@ -37,12 +37,12 @@ export function Pausas({ t, className = '' }) {
 
 // Tarjeta "boleto": talón con día/noche y P/S, hora grande, sección, función y si viene de un cambio
 // Observación que viene escrita en la hoja debajo del horario (Permuta, Permiso personal…)
-export function ChipObservacion({ texto, chico = false }) {
+export function ChipObservacion({ texto, chico = false, anulado = false }) {
   if (!texto) return null
   const permiso = /permiso|incapacidad/i.test(texto)
   return (
     <span className={`inline-flex items-center gap-1 rounded-full font-semibold ${chico ? 'px-1.5 py-px text-[10px]' : 'px-2 py-0.5 text-xs'} ${permiso ? 'bg-violet-100 text-violet-800' : 'bg-amber-100 text-amber-900'}`}>
-      <Icono n={permiso ? 'historial' : 'cambio'} size={chico ? 11 : 13} />{texto}
+      <Icono n={permiso ? 'historial' : 'cambio'} size={chico ? 11 : 13} />{texto}{anulado ? ' · ya no lo trabajas' : ''}
     </span>
   )
 }
@@ -54,22 +54,22 @@ export function TarjetaTurno({ t, onClick, extra, conFecha = false, publicado = 
   return (
     <Tag onClick={onClick}
       aria-label={onClick ? `${conFecha ? fechaCorta(t.fecha) + ', ' : ''}${horario(t.etiqueta)}, ${SECCION[t.seccion]}, ${m.texto}${t.observacion ? ', ' + t.observacion : ''}` : undefined}
-      className={`boleto flex w-full items-stretch text-left transition ${onClick ? 'active:scale-[0.98] hover:ring-slate-300' : ''}`}>
+      className={`boleto flex w-full items-stretch text-left transition ${t.anulado ? 'opacity-70 grayscale' : ''} ${onClick ? 'active:scale-[0.98] hover:ring-slate-300' : ''}`}>
       <span className={`boleto-talon flex w-14 shrink-0 flex-col items-center justify-center gap-0.5 ${sp ? 'bg-sp-claro text-sp' : 'bg-planilla-claro text-planilla'} ${m.corto ? 'talon-corto' : ''}`}>
         <Icono n={m.icono} size={22} />
         <span className="text-[11px] font-bold leading-none">{letraSeccion(t.seccion)}</span>
       </span>
       <span className="min-w-0 flex-1 py-2.5 pr-3 pl-4">
         {conFecha && <span className="block text-xs font-semibold capitalize text-slate-600">{fechaCorta(t.fecha)}</span>}
-        <span className="mono block text-lg font-semibold leading-tight text-slate-900">{horario(t.etiqueta)}</span>
+        <span className={`mono block text-lg font-semibold leading-tight ${t.anulado ? 'text-slate-500 line-through decoration-2' : 'text-slate-900'}`}>{horario(t.etiqueta)}</span>
         <span className="mt-1 flex flex-wrap items-center gap-1.5">
           <ChipSeccion seccion={t.seccion} />
           <ChipFuncion funcion={t.funcion} />
-          <ChipObservacion texto={t.observacion} />
+          <ChipObservacion texto={t.observacion} anulado={t.anulado} />
           <span className="text-xs text-slate-600">{horas(t)} h · {m.texto.toLowerCase()}</span>
           {publicado && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">En Permutas</span>}
         </span>
-        {conPausas && <Pausas t={t} className="mt-1.5" />}
+        {conPausas && !t.anulado && <Pausas t={t} className="mt-1.5" />}
       </span>
       {(t.es_cambio || extra) && (
         <span className="flex items-center gap-2 pr-3">

@@ -48,7 +48,7 @@ export default function Inicio({ cuenta, avisar, onAbrirSolicitud, onIr, recarga
         supabase.from('ajustes').select('anuncio, anuncio_hasta').eq('id', 1).single().then((x) => x.data, () => null),
       ])
       setAnuncio(aj?.anuncio && (!aj.anuncio_hasta || aj.anuncio_hasta >= hoy()) ? aj.anuncio : null)
-      setTurnos(r.turnos)
+      setTurnos(r.turnos.filter((t) => !t.anulado))
       setSinConexion(r.sinConexion)
       setPend(p)
       if (mov) {

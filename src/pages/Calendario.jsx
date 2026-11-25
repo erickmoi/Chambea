@@ -95,7 +95,7 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
 
   // Resumen del mes del cursor
   const resumen = useMemo(() => {
-    const deMes = (datos?.turnos || []).filter((t) => t.fecha >= inicioMes(cursor) && t.fecha <= finMes(cursor))
+    const deMes = (datos?.turnos || []).filter((t) => !t.anulado && t.fecha >= inicioMes(cursor) && t.fecha <= finMes(cursor))
     const r = { planilla: { n: 0, h: 0 }, sp: { n: 0, h: 0 }, dia: 0, noche: 0, tarde: 0, manana: 0, cambios: 0, dias: new Set() }
     for (const t of deMes) {
       r[t.seccion].n++
@@ -190,8 +190,7 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
         <span className="flex items-center gap-1"><span className="turno-corto inline-flex items-center rounded px-1 text-sp"><Icono n="tarde" size={14} /></span>Tarde (turno corto)</span>
         <span className="flex items-center gap-1"><span className="turno-corto inline-flex items-center rounded px-1 text-planilla"><Icono n="manana" size={14} /></span>Mañana (turno corto)</span>
         <span className="flex items-center gap-1"><Icono n="repetir" size={14} className="text-marca-texto" />Cambio hecho en Chambea</span>
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" />Permuta en la hoja</span>
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-violet-500" />Permiso personal</span>
+        <span className="flex items-center gap-1"><span className="rounded bg-slate-100 px-1 text-slate-400 line-through">P</span>Ya no lo trabajas (permuta o permiso en la hoja)</span>
       </div>
 
       {cuenta.agrega_turnos && (
@@ -222,11 +221,11 @@ export default function Calendario({ cuenta, avisar, onAbrirSolicitud, verResume
           <p className="mb-4 text-sm text-slate-600">Descarga tus turnos del mes para tenerlos en tu calendario o en Excel.</p>
           <div className="grid gap-2">
             <button className="btn-primario flex items-center justify-center gap-2 py-3" onClick={() => {
-              exportarIcs((datos?.turnos || []).filter((t) => t.fecha >= inicioMes(cursor) && t.fecha <= finMes(cursor)), `chambea-${cursor.slice(0, 7)}`)
+              exportarIcs((datos?.turnos || []).filter((t) => !t.anulado && t.fecha >= inicioMes(cursor) && t.fecha <= finMes(cursor)), `chambea-${cursor.slice(0, 7)}`)
               setExportar(false)
             }}><Icono n="calendario" size={20} />Para Google Calendar o iPhone (.ics)</button>
             <button className="btn-secundario flex items-center justify-center gap-2 py-3" onClick={() => {
-              exportarCsv((datos?.turnos || []).filter((t) => t.fecha >= inicioMes(cursor) && t.fecha <= finMes(cursor)), `chambea-${cursor.slice(0, 7)}`)
+              exportarCsv((datos?.turnos || []).filter((t) => !t.anulado && t.fecha >= inicioMes(cursor) && t.fecha <= finMes(cursor)), `chambea-${cursor.slice(0, 7)}`)
               setExportar(false)
             }}><Icono n="excel" size={20} />Para Excel (.csv)</button>
           </div>
@@ -316,7 +315,7 @@ function Semana({ semana, porDia, onTurno }) {
               const [a, b] = t.etiqueta.split(/[–-]/).map((x) => hora(x.trim()))
               return (
                 <button key={t.id} onClick={() => onTurno(t)} aria-label={`${fechaCorta(d)}, ${horario(t.etiqueta)}, ${t.seccion === 'sp' ? 'SP' : 'Planilla'}`}
-                  className={`flex w-full flex-col items-center rounded-lg px-0.5 py-1.5 transition active:scale-95 ${t.seccion === 'sp' ? 'bg-sp-claro text-sp' : 'bg-planilla-claro text-planilla'} ${m.corto ? 'turno-corto' : ''}`}>
+                  className={`flex w-full flex-col items-center rounded-lg px-0.5 py-1.5 transition active:scale-95 ${t.anulado ? 'bg-slate-100 text-slate-400 line-through' : t.seccion === 'sp' ? 'bg-sp-claro text-sp' : 'bg-planilla-claro text-planilla'} ${m.corto && !t.anulado ? 'turno-corto' : ''}`}>
                   <span className="flex items-center gap-0.5 text-[11px] font-bold"><Icono n={m.icono} size={13} />{letraSeccion(t.seccion)}</span>
                   <span className="mono block text-[10px] font-semibold leading-tight sm:text-xs">{a}</span>
                   <span className="mono block text-[10px] leading-tight opacity-80 sm:text-xs">{b}</span>
@@ -357,7 +356,7 @@ function Mes({ cursor, porDia, dia, onDia, publicados, onTurno, onDeTurno, conHo
                 {lista.slice(0, 2).map((t) => {
                   const m = momento(t)
                   return (
-                    <span key={t.id} className={`flex w-full flex-col items-center rounded-md py-px text-[10px] font-bold leading-tight ${elegido ? 'bg-white/20' : t.seccion === 'sp' ? 'bg-sp-claro text-sp' : 'bg-planilla-claro text-planilla'} ${m.corto ? 'turno-corto' : ''}`}>
+                    <span key={t.id} className={`flex w-full flex-col items-center rounded-md py-px text-[10px] font-bold leading-tight ${elegido ? 'bg-white/20' : t.anulado ? 'bg-slate-100 text-slate-400 line-through' : t.seccion === 'sp' ? 'bg-sp-claro text-sp' : 'bg-planilla-claro text-planilla'} ${m.corto && !t.anulado ? 'turno-corto' : ''}`}>
                       <span className="flex items-center gap-0.5"><Icono n={m.icono} size={11} />{letraSeccion(t.seccion)}</span>
                       {conHora && <span className="mono text-[9px] font-semibold tracking-tighter">{horaCorta(t.etiqueta)}</span>}
                       {t.observacion && <span className={`mt-px h-1.5 w-1.5 rounded-full ${/permiso|incapacidad/i.test(t.observacion) ? 'bg-violet-500' : 'bg-amber-500'}`} title={t.observacion} />}

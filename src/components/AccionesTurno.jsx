@@ -14,7 +14,9 @@ export function HojaTurno({ t, publicado, onCerrar, onBuscar, onPublicar, onVerS
     <Hoja titulo={fechaCorta(t.fecha)} icono="calendario" onCerrar={onCerrar}>
       <TarjetaTurno t={t} publicado={!!publicado} conPausas />
       {t.es_cambio && <p className="mt-2 flex items-center gap-1.5 text-sm text-slate-600"><Icono n="repetir" size={16} className="text-marca-texto" />Este turno viene de un cambio hecho en Chambea.</p>}
-      {!futuro ? (
+      {t.anulado ? (
+        <p className="mt-4 rounded-xl bg-slate-100 p-3 text-sm text-slate-600">En la hoja oficial dice <b>{t.observacion}</b>: este turno ya no lo trabajas. No te enviamos avisos de él ni cuenta en tu resumen.</p>
+      ) : !futuro ? (
         <p className="mt-4 rounded-xl bg-slate-100 p-3 text-sm text-slate-600">Este turno ya empezó o ya pasó.</p>
       ) : publicado ? (
         <div className="mt-5 space-y-2">

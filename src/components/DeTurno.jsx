@@ -24,7 +24,7 @@ export default function DeTurno({ fecha: inicial = hoy(), miPersona, onCerrar })
   const visibles = useMemo(() => {
     const hora = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/El_Salvador', hour: 'numeric', hourCycle: 'h23' }).format(new Date()))
     const conAyer = fecha === hoy() && hora < 5
-    return (lista || []).filter((t) => conAyer || t.fecha === fecha)
+    return (lista || []).filter((t) => !t.anulado && (conAyer || t.fecha === fecha))
   }, [lista, fecha])
 
   const grupos = useMemo(() => {
