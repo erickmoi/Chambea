@@ -1,4 +1,5 @@
 // Campanita de avisos: cuenta los no leídos y muestra la lista
+import { sonar } from '../lib/sonido'
 import { useCallback, useEffect, useState } from 'react'
 import Icono from './Icono'
 import { Hoja, Cargando } from './ui'
@@ -20,6 +21,7 @@ export function useAvisos(activo, alNuevo) {
     // Tiempo real: cuando llega un aviso nuevo se actualiza al instante (y cada 2 min por si acaso)
     const canal = supabase.channel('mis-avisos')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notificaciones' }, () => {
+        if (document.visibilityState === 'visible') sonar()
         cargar()
         alNuevo?.current?.()
       })

@@ -22,6 +22,7 @@ import { lazySeguro } from './lib/cargaSegura'
 import Fallo from './components/Fallo'
 import { VERSION, NOVEDADES, novedadesPendientes, hayNovedades, marcarNovedadesVistas, primeraVez, paraCuenta } from './lib/version'
 import { refrescarPush } from './lib/push'
+import { prepararSonido } from './lib/sonido'
 
 const Admin = lazySeguro(() => import('./pages/admin/Admin.jsx'))
 
@@ -69,6 +70,7 @@ export default function App() {
     }
     latir(true)
     refrescarPush()
+    prepararSonido()
     const t = setInterval(() => latir(false), 60000)
     const alVolver = () => { if (document.visibilityState === 'visible') latir(true) }
     document.addEventListener('visibilitychange', alVolver)

@@ -1,4 +1,5 @@
 // Cuenta y ajustes personales (solo para quien los cambia). Los ajustes generales del admin están en Admin → Ajustes.
+import { sonidoActivo, guardarSonido, sonar } from '../lib/sonido'
 import { useCallback, useEffect, useState } from 'react'
 import { supabase, mensajeError } from '../lib/supabase'
 import { useAuth, esAdmin } from '../lib/auth'
@@ -289,6 +290,7 @@ function Notificaciones({ avisar }) {
     <section className="tarjeta space-y-3">
       <h3 className="flex items-center gap-2 font-bold text-slate-900"><Icono n="notificaciones" size={20} />Avisos en el celular</h3>
       <ActivarAvisos compacto={estado === 'activo'} avisar={avisar} />
+      <SonidoApp />
       {estado === 'activo' && (
         <div className="flex gap-2">
           <button className="btn-secundario flex-1" disabled={ocupado} onClick={() => probarPush().then(() => avisar('Prueba enviada'), (e) => avisar(e.message, 'error'))}>Probar</button>
@@ -296,6 +298,19 @@ function Notificaciones({ avisar }) {
         </div>
       )}
     </section>
+  )
+}
+
+// Sonido de Chambea con la app abierta (con la app cerrada suena el tono del celular)
+function SonidoApp() {
+  const [si, setSi] = useState(sonidoActivo)
+  return (
+    <div className="space-y-1">
+      <Interruptor activo={si} etiqueta="Sonido con la app abierta"
+        ayuda="Un tono breve y una vibración cuando llega un aviso. Con la app cerrada suena el tono de tu celular."
+        onCambio={(v) => { setSi(v); guardarSonido(v); if (v) sonar(true) }} />
+      {si && <button className="text-sm font-semibold text-marca-texto" onClick={() => sonar(true)}>Escuchar</button>}
+    </div>
   )
 }
 

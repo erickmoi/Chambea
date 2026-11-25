@@ -51,16 +51,24 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   let d = {}
   try { d = event.data?.json() ?? {} } catch { d = { body: event.data?.text() } }
-  event.waitUntil(
-    self.registration.showNotification(d.title || 'Chambea', {
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((ventanas) => {
+    // Si Chambea está abierta y a la vista, el aviso llega callado (la app suena una sola vez)
+    const abierta = ventanas.some((v) => v.visibilityState === 'visible' && v.focused)
+    const opciones = {
       body: d.body || '',
       icon: '/icons/icono-192.png',
       badge: '/icons/icono-192.png',
       tag: d.tag,
       renotify: !!d.tag,
+      // Los de entrada, inicio y salida se quedan en pantalla hasta tocarlos (Android y computadora)
+      requireInteraction: ['marcaje', 'inicio_turno', 'salida', 'referencias'].includes(d.tag),
       data: { url: d.url || '/' },
-    }),
-  )
+    }
+    // Una sola vibración breve (Android). "silent" y "vibrate" no pueden ir juntos.
+    if (abierta) opciones.silent = true
+    else opciones.vibrate = [150]
+    return self.registration.showNotification(d.title || 'Chambea', opciones)
+  }))
 })
 
 self.addEventListener('notificationclick', (event) => {
